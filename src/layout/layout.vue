@@ -1,11 +1,11 @@
 <template>
   <div class="app-layout" :class="currentTheme">
     <!-- 顶部导航栏 -->
-    <AppHeader 
+    <AppHeader
       :theme="currentTheme"
       :sidebar-collapsed="sidebarCollapsed"
       @toggle-sidebar="toggleSidebar"
-      @change-theme="changeTheme"
+      @change-theme="themeStore.changeTheme"
     />
     
     <!-- 主体内容区域 -->
@@ -90,13 +90,16 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
 import AppHeader from './head.vue'
 import AppMain from './main.vue'
+import { useThemeStore } from '../stores/theme.js'
 
 // 响应式数据
 const route = useRoute()
-const currentTheme = ref('theme-red') // 默认红色主题
+const themeStore = useThemeStore()
+const { currentTheme } = storeToRefs(themeStore)
 const sidebarCollapsed = ref(false)
 const mobileSidebarOpen = ref(false)
 const isMobile = ref(false)
@@ -125,26 +128,6 @@ const closeMobileSidebar = () => {
   }
 }
 
-// 切换主题
-const changeTheme = (theme) => {
-  currentTheme.value = theme
-  // 保存主题设置到本地存储
-  localStorage.setItem('netease-theme', theme)
-}
-
-// 初始化主题设置
-const initTheme = () => {
-  const savedTheme = localStorage.getItem('netease-theme')
-  if (savedTheme) {
-    currentTheme.value = savedTheme
-  } else {
-    // 检查系统主题偏好
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    if (prefersDark) {
-      currentTheme.value = 'theme-dark'
-    }
-  }
-}
 
 // 监听窗口大小变化
 const handleResize = () => {
@@ -154,7 +137,6 @@ const handleResize = () => {
 // 生命周期钩子
 onMounted(() => {
   checkMobile()
-  initTheme()
   window.addEventListener('resize', handleResize)
 })
 

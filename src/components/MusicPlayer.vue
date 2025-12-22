@@ -1,5 +1,5 @@
 <template>
-  <div class="music-player" :class="{ expanded: isExpanded }">
+  <div class="music-player" :class="[currentTheme, { expanded: isExpanded }]">
     <!-- 播放器主体 -->
     <div class="player-main">
       <!-- 歌曲信息 -->
@@ -105,33 +105,22 @@
     <!-- 音频元素 -->
     <audio 
       ref="audioPlayer"
-      @timeupdate="onTimeUpdate"
-      @loadedmetadata="onLoadedMetadata"
-      @ended="onSongEnd"
-      @progress="onProgress"
+      @timeupdate="playerStore.onTimeUpdate"
+      @loadedmetadata="playerStore.onLoadedMetadata"
+      @ended="playerStore.onSongEnd"
+      @progress="playerStore.onProgress"
     ></audio>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import axios from 'axios'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { usePlayerStore } from '../stores/player.js'
+import { useThemeStore } from '../stores/theme.js'
 
-// 响应式数据
-const currentSong = ref(null)
-const isPlaying = ref(false)
-const isExpanded = ref(false)
-const currentTime = ref(0)
-const duration = ref(0)
-const volume = ref(80)
-const isMuted = ref(false)
-const playMode = ref('sequence') // sequence, single, random
-const playlist = ref([])
-const currentIndex = ref(-1)
-const currentLyrics = ref([])
-const currentLyricIndex = ref(0)
-const lyricsOffset = ref(0)
-const bufferProgress = ref(0)
+const playerStore = usePlayerStore()
+const themeStore = useThemeStore()
 
 // DOM 引用
 const audioPlayer = ref(null)
@@ -140,398 +129,124 @@ const lyricsContainer = ref(null)
 // 默认封面
 const defaultCover = 'https://picsum.photos/200/200?default=fallback'
 
-// 计算属性
-const progressPercentage = computed(() => {
-  return duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0
+// 从store中解构响应式状态，保持响应性
+const {
+  currentSong,
+  isPlaying,
+  isExpanded,
+  currentTime,
+  duration,
+  volume,
+  isMuted,
+  bufferProgress,
+  playlist,
+  currentIndex,
+  playMode,
+  currentLyrics,
+  currentLyricIndex,
+  lyricsOffset,
+  progressPercentage,
+  playModeIcon,
+  playModeTitle,
+  volumeIcon,
+  canPrev,
+  canNext
+} = storeToRefs(playerStore)
+
+// 从store中解构方法（方法不需要storeToRefs）
+const {
+  initAudio,
+  togglePlay,
+  play,
+  pause,
+  prevSong,
+  nextSong,
+  togglePlayMode,
+  toggleMute,
+  updateVolume,
+  seekTo,
+  seekToLyric,
+  loadSong,
+  playSong,
+  setPlaylist,
+  clearPlaylist,
+  loadLyrics,
+  updateCurrentLyric,
+  formatTime,
+  searchSongs,
+  onTimeUpdate,
+  onLoadedMetadata,
+  onSongEnd,
+  onProgress
+} = playerStore
+
+// 从主题store中解构，保持响应性
+const { currentTheme } = storeToRefs(themeStore)
+
+// 监听主题变化，确保组件响应主题切换
+watch(() => themeStore.currentTheme, (newTheme) => {
+  console.log('播放器主题已切换到:', newTheme)
 })
 
-const playModeIcon = computed(() => {
-  const icons = {
-    sequence: '🔁',
-    single: '🔂',
-    random: '🔀'
-  }
-  return icons[playMode.value]
-})
-
-const playModeTitle = computed(() => {
-  const titles = {
-    sequence: '列表播放',
-    single: '单曲循环',
-    random: '随机播放'
-  }
-  return titles[playMode.value]
-})
-
-const volumeIcon = computed(() => {
-  if (isMuted.value || volume.value === 0) return '🔇'
-  if (volume.value < 30) return '🔈'
-  if (volume.value < 70) return '🔉'
-  return '🔊'
-})
-
-const canPrev = computed(() => {
-  return playlist.value.length > 0 && currentIndex.value > 0
-})
-
-const canNext = computed(() => {
-  return playlist.value.length > 0 && currentIndex.value < playlist.value.length - 1
-})
-
-// API 调用方法
-const fetchTopPlaylists = async () => {
-  try {
-    const response = await axios.get('http://iwenwiki.com:3000/top/playlist/highquality')
-    return response.data.playlists?.slice(0, 10) || []
-  } catch (error) {
-    console.error('获取精品歌单失败:', error)
-    return []
-  }
+// 展开收起播放器
+const toggleExpanded = () => {
+  playerStore.isExpanded = !playerStore.isExpanded
 }
 
-const fetchTopListDetail = async () => {
-  try {
-    const response = await axios.get('http://iwenwiki.com:3000/toplist/detail')
-    return response.data.list?.slice(0, 10) || []
-  } catch (error) {
-    console.error('获取榜单摘要失败:', error)
-    return []
-  }
-}
-
-const fetchTopArtists = async () => {
-  try {
-    const response = await axios.get('http://iwenwiki.com:3000/toplist/artist')
-    return response.data.list?.artists?.slice(0, 10) || []
-  } catch (error) {
-    console.error('获取歌手榜失败:', error)
-    return []
-  }
-}
-
-const fetchTopMV = async () => {
-  try {
-    const response = await axios.get('http://iwenwiki.com:3000/top/mv')
-    return response.data.data?.slice(0, 10) || []
-  } catch (error) {
-    console.error('获取MV排行失败:', error)
-    return []
-  }
-}
-
-const fetchPersonalized = async () => {
-  try {
-    const response = await axios.get('http://iwenwiki.com:3000/personalized')
-    return response.data.result?.slice(0, 10) || []
-  } catch (error) {
-    console.error('获取推荐歌单失败:', error)
-    return []
-  }
-}
-
-const fetchPersonalizedNewsong = async () => {
-  try {
-    const response = await axios.get('http://iwenwiki.com:3000/personalized/newsong')
-    return response.data.result?.slice(0, 10) || []
-  } catch (error) {
-    console.error('获取推荐新音乐失败:', error)
-    return []
-  }
-}
-
-const fetchTopSongs = async () => {
-  try {
-    const response = await axios.get('http://iwenwiki.com:3000/top/song')
-    return response.data.data?.slice(0, 10) || []
-  } catch (error) {
-    console.error('获取新歌速递失败:', error)
-    return []
-  }
-}
-
-// 播放控制方法
-const togglePlay = () => {
-  if (!audioPlayer.value) return
-  
-  if (isPlaying.value) {
-    audioPlayer.value.pause()
-  } else {
-    if (!currentSong.value && playlist.value.length > 0) {
-      loadSong(0)
-    }
-    audioPlayer.value.play()
-  }
-  isPlaying.value = !isPlaying.value
-}
-
-const prevSong = () => {
-  if (currentIndex.value > 0) {
-    loadSong(currentIndex.value - 1)
-    play()
-  }
-}
-
-const nextSong = () => {
-  if (playMode.value === 'random') {
-    const randomIndex = Math.floor(Math.random() * playlist.value.length)
-    loadSong(randomIndex)
-    play()
-  } else if (currentIndex.value < playlist.value.length - 1) {
-    loadSong(currentIndex.value + 1)
-    play()
-  } else if (playMode.value === 'sequence' && currentIndex.value === playlist.value.length - 1) {
-    // 列表播放完毕，停止播放
-    pause()
-  }
-}
-
-const togglePlayMode = () => {
-  const modes = ['sequence', 'single', 'random']
-  const currentModeIndex = modes.indexOf(playMode.value)
-  playMode.value = modes[(currentModeIndex + 1) % modes.length]
-}
-
-const toggleMute = () => {
-  isMuted.value = !isMuted.value
-  if (audioPlayer.value) {
-    audioPlayer.value.muted = isMuted.value
-  }
-}
-
-const updateVolume = () => {
-  if (audioPlayer.value) {
-    audioPlayer.value.volume = volume.value / 100
-  }
-}
-
-const seekTo = (event) => {
-  if (!audioPlayer.value || !duration.value) return
-  
-  const rect = event.currentTarget.getBoundingClientRect()
-  const percent = (event.clientX - rect.left) / rect.width
-  const newTime = percent * duration.value
-  currentTime.value = newTime
-  audioPlayer.value.currentTime = newTime
-}
-
-const seekToLyric = (time) => {
-  if (audioPlayer.value) {
-    currentTime.value = time
-    audioPlayer.value.currentTime = time
-  }
-}
-
-const play = () => {
-  if (audioPlayer.value) {
-    audioPlayer.value.play()
-    isPlaying.value = true
-  }
-}
-
-const pause = () => {
-  if (audioPlayer.value) {
-    audioPlayer.value.pause()
-    isPlaying.value = false
-  }
-}
-
-// 加载歌曲
-const loadSong = (index) => {
-  if (index < 0 || index >= playlist.value.length) return
-  
-  const song = playlist.value[index]
-  currentIndex.value = index
-  currentSong.value = song
-  
-  if (audioPlayer.value && song.url) {
-    audioPlayer.value.src = song.url
-    currentTime.value = 0
-    loadLyrics(song.id)
-  }
-}
-
-// 加载歌词
-const loadLyrics = async (songId) => {
-  try {
-    // 这里应该调用歌词API，暂时使用模拟数据
-    currentLyrics.value = [
-      { time: 0, text: '暂无歌词显示' },
-      { time: 5, text: '这是示例歌词' },
-      { time: 10, text: '歌词会随时间滚动' },
-      { time: 15, text: '当前歌词会高亮显示' }
-    ]
-    currentLyricIndex.value = 0
-  } catch (error) {
-    console.error('加载歌词失败:', error)
-    currentLyrics.value = [{ time: 0, text: '暂无歌词' }]
-  }
-}
-
-// 音频事件处理
-const onTimeUpdate = () => {
-  if (audioPlayer.value) {
-    currentTime.value = audioPlayer.value.currentTime
-    updateCurrentLyric()
-  }
-}
-
-const onLoadedMetadata = () => {
-  if (audioPlayer.value) {
-    duration.value = audioPlayer.value.duration
-  }
-}
-
-const onSongEnd = () => {
-  if (playMode.value === 'single') {
-    // 单曲循环
-    if (audioPlayer.value) {
-      audioPlayer.value.currentTime = 0
-      audioPlayer.value.play()
-    }
-  } else {
-    // 播放下一首
-    nextSong()
-  }
-}
-
-const onProgress = () => {
-  if (audioPlayer.value && audioPlayer.value.buffered.length > 0) {
-    const buffered = audioPlayer.value.buffered
-    const bufferedEnd = buffered.buffered.end(buffered.length - 1)
-    bufferProgress.value = (bufferedEnd / duration.value) * 100
-  }
-}
-
-// 更新当前歌词
-const updateCurrentLyric = () => {
-  for (let i = currentLyrics.value.length - 1; i >= 0; i--) {
-    if (currentTime.value >= currentLyrics.value[i].time) {
-      if (currentLyricIndex.value !== i) {
-        currentLyricIndex.value = i
-        updateLyricsScroll()
-      }
-      break
-    }
-  }
-}
-
-// 更新歌词滚动位置
-const updateLyricsScroll = () => {
-  nextTick(() => {
-    if (lyricsContainer.value) {
-      const containerHeight = lyricsContainer.value.clientHeight
-      const activeLine = lyricsContainer.value.querySelector('.lyric-line.active')
-      if (activeLine) {
-        const lineHeight = activeLine.offsetHeight
-        const activeOffset = currentLyricIndex.value * lineHeight
-        const targetOffset = (containerHeight / 2) - (lineHeight / 2) - activeOffset
-        lyricsOffset.value = targetOffset
-      }
-    }
-  })
-}
-
-// 格式化时间
-const formatTime = (seconds) => {
-  if (!seconds || seconds < 0) return '00:00'
-  
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-}
-
-// 搜索功能
-const searchSongs = async (query) => {
-  try {
-    const response = await axios.get(`http://iwenwiki.com:3000/search?keywords=${encodeURIComponent(query)}`)
-    return response.data.result?.songs || []
-  } catch (error) {
-    console.error('搜索失败:', error)
-    return []
-  }
-}
-
-// 初始化数据
+// 初始化音乐数据
 const initializeData = async () => {
   try {
-    // 并发调用多个API
-    const [
-      playlists,
-      topLists,
-      artists,
-      mvs,
-      personalized,
-      newsongs,
-      topsongs
-    ] = await Promise.all([
-      fetchTopPlaylists(),
-      fetchTopListDetail(),
-      fetchTopArtists(),
-      fetchTopMV(),
-      fetchPersonalized(),
-      fetchPersonalizedNewsong(),
-      fetchTopSongs()
-    ])
+    // 使用store中的searchSongs方法获取示例数据
+    const result = await searchSongs('周杰伦', 10)
     
-    // 将API数据转换为播放列表格式
-    const songs = [
-      ...newsongs.map(item => ({
+    if (result.success && result.data.length > 0) {
+      // 将搜索结果转换为播放列表格式
+      const songs = result.data.map(item => ({
         id: item.id,
-        title: item.name,
-        artist: item.song?.artists?.[0]?.name || '未知',
-        cover: item.song?.album?.picUrl || defaultCover,
-        album: item.song?.album?.name || '未知专辑',
-        url: item.url // 这里需要实际的音频URL
-      })),
-      ...topsongs.map(item => ({
-        id: item.id,
-        title: item.name,
-        artist: item.ar?.[0]?.name || '未知',
-        cover: item.al?.picUrl || defaultCover,
-        album: item.al?.name || '未知专辑',
-        url: item.url
+        title: item.name || '未知歌曲',
+        artist: item.artist || '未知歌手',
+        album: item.album || '未知专辑',
+        cover: item.coverUrl || defaultCover,
+        duration: item.duration || 0,
+        url: '' // url将在播放时动态获取
       }))
-    ].slice(0, 20) // 限制20首歌曲
-    
-    playlist.value = songs
-    console.log('音乐数据加载完成:', songs.length, '首歌曲')
+      
+      setPlaylist(songs)
+      console.log('音乐数据加载完成:', songs.length, '首歌曲')
+    } else {
+      console.warn('搜索音乐结果为空')
+    }
   } catch (error) {
     console.error('初始化数据失败:', error)
   }
 }
 
+// 响应式监听volume变化
+watch(volume, (newVolume) => {
+  updateVolume()
+})
+
 // 生命周期
 onMounted(() => {
-  initializeData()
-  
-  // 设置音频元素事件
+  // 初始化音频元素
   if (audioPlayer.value) {
-    audioPlayer.value.volume = volume.value / 100
-    audioPlayer.value.muted = isMuted.value
+    initAudio(audioPlayer.value)
   }
+  
+  // 初始化数据
+  initializeData()
 })
 
 onUnmounted(() => {
   // 清理音频播放器
   if (audioPlayer.value) {
     audioPlayer.value.pause()
-    audioPlayer.value = null
   }
 })
 
 // 暴露方法给父组件
 defineExpose({
-  playSong: (song) => {
-    const songIndex = playlist.value.findIndex(s => s.id === song.id)
-    if (songIndex === -1) {
-      // 如果歌曲不在播放列表中，添加到列表
-      playlist.value.push(song)
-      loadSong(playlist.value.length - 1)
-    } else {
-      loadSong(songIndex)
-    }
-    play()
-  },
+  playSong,
   searchSongs,
   togglePlay
 })

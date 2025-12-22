@@ -9,68 +9,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import AppLayout from './layout/layout.vue'
 import MusicPlayer from './components/MusicPlayer.vue'
+import { useThemeStore } from './stores/theme.js'
 
-// 响应式数据
-const currentTheme = ref('theme-red')
+const themeStore = useThemeStore()
 
-// 初始化主题
-const initTheme = () => {
-  // 从本地存储获取保存的主题
-  const savedTheme = localStorage.getItem('netease-theme')
-  if (savedTheme) {
-    currentTheme.value = savedTheme
-    document.body.className = savedTheme
-  } else {
-    // 检查系统主题偏好
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    if (prefersDark) {
-      currentTheme.value = 'theme-dark'
-      document.body.className = 'theme-dark'
-    } else {
-      currentTheme.value = 'theme-red'
-      document.body.className = 'theme-red'
-    }
+// 解构主题状态和方法，保持响应性
+const { currentTheme } = storeToRefs(themeStore)
+const { initTheme, watchSystemTheme, nextTheme } = themeStore
+
+// 键盘快捷键处理
+const handleKeyboardShortcuts = (event) => {
+  // Ctrl/Cmd + Shift + T: 快速切换主题
+  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'T') {
+    event.preventDefault()
+    nextTheme()
   }
 }
 
-// 监听系统主题变化
-const watchSystemTheme = () => {
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  mediaQuery.addEventListener('change', (e) => {
-    // 只有在用户没有手动设置主题时才跟随系统
-    const savedTheme = localStorage.getItem('netease-theme')
-    if (!savedTheme) {
-      if (e.matches) {
-        currentTheme.value = 'theme-dark'
-        document.body.className = 'theme-dark'
-      } else {
-        currentTheme.value = 'theme-red'
-        document.body.className = 'theme-red'
-      }
-    }
-  })
-}
-
-// 全局主题切换方法（提供给其他组件使用）
-const changeGlobalTheme = (theme) => {
-  currentTheme.value = theme
-  document.body.className = theme
-  localStorage.setItem('netease-theme', theme)
-  
-  // 发布主题变化事件
-  window.dispatchEvent(new CustomEvent('theme-changed', {
-    detail: { theme }
-  }))
-}
-
-// 将主题切换方法挂载到全局，供其他组件使用
-window.changeGlobalTheme = changeGlobalTheme
-
 // 生命周期
 onMounted(() => {
+  // 初始化主题
   initTheme()
   watchSystemTheme()
   
@@ -81,23 +43,9 @@ onMounted(() => {
   document.addEventListener('keydown', handleKeyboardShortcuts)
 })
 
-// 键盘快捷键处理
-const handleKeyboardShortcuts = (event) => {
-  // Ctrl/Cmd + Shift + T: 快速切换主题
-  if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'T') {
-    event.preventDefault()
-    const themes = ['theme-red', 'theme-blue', 'theme-green', 'theme-purple', 'theme-orange', 'theme-dark']
-    const currentIndex = themes.indexOf(currentTheme.value)
-    const nextIndex = (currentIndex + 1) % themes.length
-    changeGlobalTheme(themes[nextIndex])
-  }
-}
-
 // 清理事件监听器
 const cleanup = () => {
   document.removeEventListener('keydown', handleKeyboardShortcuts)
-  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-  mediaQuery.removeEventListener('change', watchSystemTheme)
 }
 
 // 组件卸载时清理

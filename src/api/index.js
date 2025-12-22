@@ -82,6 +82,22 @@ export const musicApi = {
   // 7. 获取新歌速递
   getTopSongs() {
     return retryRequest(() => api.get('/top/song'))
+  },
+
+  // 8. 获取歌曲播放URL
+  getSongUrl(songId, level = 'standard') {
+    return retryRequest(() => api.get(`/song/url/v1?id=${songId}&level=${level}`))
+  },
+
+  // 9. 批量获取歌曲播放URL
+  getBatchSongUrls(songIds, level = 'standard') {
+    const ids = Array.isArray(songIds) ? songIds.join(',') : songIds
+    return retryRequest(() => api.get(`/song/url/v1?id=${ids}&level=${level}`))
+  },
+
+  // 10. 搜索音乐
+  searchMusic(keyword, limit = 20) {
+    return retryRequest(() => api.get(`/search?keywords=${encodeURIComponent(keyword)}&limit=${limit}`))
   }
 }
 

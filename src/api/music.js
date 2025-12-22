@@ -176,5 +176,85 @@ export const musicService = {
         data: []
       }
     }
+  },
+
+  // 获取歌曲播放URL
+  async getSongUrl(songId, level = 'standard') {
+    try {
+      const response = await musicApi.getSongUrl(songId, level)
+      const urlData = response.data?.[0]
+      
+      if (!urlData || !urlData.url) {
+        return {
+          success: false,
+          error: '无法获取歌曲播放链接',
+          data: null
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          id: urlData.id,
+          url: urlData.url,
+          br: urlData.br,
+          size: urlData.size,
+          md5: urlData.md5,
+          level: urlData.level || level
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: null
+      }
+    }
+  },
+
+  // 批量获取歌曲播放URL
+  async getBatchSongUrls(songIds, level = 'standard') {
+    try {
+      const response = await musicApi.getBatchSongUrls(songIds, level)
+      const urls = response.data || []
+      
+      return {
+        success: true,
+        data: urls.map(item => ({
+          id: item.id,
+          url: item.url,
+          br: item.br,
+          size: item.size,
+          md5: item.md5,
+          level: item.level || level
+        }))
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      }
+    }
+  },
+
+  // 搜索音乐
+  async searchMusic(keyword, limit = 20) {
+    try {
+      const response = await musicApi.searchMusic(keyword, limit)
+      const songs = response.result?.songs || []
+      
+      return {
+        success: true,
+        data: songs.map(item => formatMusicData.formatSong(item)),
+        total: response.result?.songCount || 0
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      }
+    }
   }
 }
