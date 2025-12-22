@@ -1,0 +1,147 @@
+/* ===================================
+   CSS 变量系统
+   用于统一管理和维护全局样式变量
+   =================================== */
+
+/* :root 定义全局CSS变量，作为默认值 */
+:root {
+  /* ========== 颜色系统 ========== */
+  
+  /* 主色调 - 默认红色主题 */
+  --color-primary: #c20c0c;
+  --color-primary-light: #e04444;
+  --color-primary-dark: #9a0808;
+  
+  /* 辅助色 */
+  --color-secondary: #333333;
+  --color-accent: #fff;
+  
+  /* 背景色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f5f5;
+  --color-bg-tertiary: #fafafa;
+  --color-bg-dark: #242424;
+  
+  /* 文字颜色 */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #ffffff;
+  --color-text-disabled: #cccccc;
+  
+  /* 边框颜色 */
+  --color-border: #e1e1e1;
+  --color-border-light: #f0f0f0;
+  --color-border-dark: #d0d0d0;
+  
+  /* 状态颜色 */
+  --color-success: #52c41a;
+  --color-warning: #faad14;
+  --color-error: #ff4d4f;
+  --color-info: #1890ff;
+  
+  /* ========== 尺寸系统 ========== */
+  
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  
+  /* 圆角 */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-round: 50%;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 1px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.2);
+  
+  /* ========== 字体系统 ========== */
+  
+  /* 字体族 */
+  --font-family-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-numeric: 'SF Mono', Monaco, Inconsolata, 'Roboto Mono', monospace;
+  
+  /* 字体大小 */
+  --font-size-xs: 10px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-xxl: 24px;
+  --font-size-xxxl: 32px;
+  
+  /* 字体粗细 */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* 行高 */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-loose: 1.8;
+  --line-height-relaxed: 1.6;
+  
+  /* ========== 布局系统 ========== */
+  
+  /* 容器宽度 */
+  --container-width: 1200px;
+  --container-width-sm: 768px;
+  --container-width-xs: 576px;
+  
+  /* 侧边栏宽度 */
+  --sidebar-width: 200px;
+  --sidebar-collapsed-width: 64px;
+  
+  /* 顶部导航高度 */
+  --header-height: 64px;
+  
+  /* Z-index 层级 */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  --z-index-player: 100;
+  
+  /* ========== 过渡动画 ========== */
+  
+  /* 过渡时间 */
+  --transition-fast: 0.15s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.5s;
+  
+  /* 过渡函数 */
+  --ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ease-in: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+/* ========== 暗色主题变量 ========== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* 暗色主题下的默认颜色 */
+    --color-bg-primary: #1a1a1a;
+    --color-bg-secondary: #242424;
+    --color-bg-tertiary: #2f2f2f;
+    
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #b3b3b3;
+    --color-text-tertiary: #808080;
+    
+    --color-border: #404040;
+    --color-border-light: #333333;
+  }
+}

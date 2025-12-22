@@ -1,0 +1,347 @@
+/* ===================================
+   主题系统样式
+   提供多套预设主题，支持主题切换功能
+   =================================== */
+
+@import './variables.css';
+
+/* ========== 默认红色主题 ========== */
+.theme-red {
+  --color-primary: #c20c0c;
+  --color-primary-light: #e04444;
+  --color-primary-dark: #9a0808;
+  
+  --color-secondary: #8b0000;
+  --color-accent: #ff6b6b;
+  
+  /* 背景色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #fff5f5;
+  --color-bg-tertiary: #ffebeb;
+  --color-bg-dark: #c20c0c;
+  
+  /* 文字颜色 */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #ffffff;
+  
+  /* 边框颜色 */
+  --color-border: #ffd6d6;
+  --color-border-light: #ffebeb;
+  --color-border-dark: #ff8080;
+  
+  --gradient-primary: linear-gradient(135deg, #c20c0c, #e04444);
+  --gradient-secondary: linear-gradient(135deg, #8b0000, #a52a2a);
+}
+
+/* ========== 蓝色主题 ========== */
+.theme-blue {
+  --color-primary: #1890ff;
+  --color-primary-light: #40a9ff;
+  --color-primary-dark: #096dd9;
+  
+  --color-secondary: #0050b3;
+  --color-accent: #69c0ff;
+  
+  /* 背景色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f0f8ff;
+  --color-bg-tertiary: #e6f4ff;
+  --color-bg-dark: #1890ff;
+  
+  /* 文字颜色 */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #ffffff;
+  
+  /* 边框颜色 */
+  --color-border: #d6e4ff;
+  --color-border-light: #f0f8ff;
+  --color-border-dark: #40a9ff;
+  
+  --gradient-primary: linear-gradient(135deg, #1890ff, #40a9ff);
+  --gradient-secondary: linear-gradient(135deg, #0050b3, #003a8c);
+}
+
+/* ========== 绿色主题 ========== */
+.theme-green {
+  --color-primary: #52c41a;
+  --color-primary-light: #73d13d;
+  --color-primary-dark: #389e0d;
+  
+  --color-secondary: #237804;
+  --color-accent: #95de64;
+  
+  /* 背景色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f6ffed;
+  --color-bg-tertiary: #d9f7be;
+  --color-bg-dark: #52c41a;
+  
+  /* 文字颜色 */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #ffffff;
+  
+  /* 边框颜色 */
+  --color-border: #b7eb8f;
+  --color-border-light: #f6ffed;
+  --color-border-dark: #73d13d;
+  
+  --gradient-primary: linear-gradient(135deg, #52c41a, #73d13d);
+  --gradient-secondary: linear-gradient(135deg, #237804, #135200);
+}
+
+/* ========== 紫色主题 ========== */
+.theme-purple {
+  --color-primary: #722ed1;
+  --color-primary-light: #9254de;
+  --color-primary-dark: #531dab;
+  
+  --color-secondary: #391085;
+  --color-accent: #b37feb;
+  
+  /* 背景色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9f0ff;
+  --color-bg-tertiary: #efdbff;
+  --color-bg-dark: #722ed1;
+  
+  /* 文字颜色 */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #ffffff;
+  
+  /* 边框颜色 */
+  --color-border: #d3adf7;
+  --color-border-light: #f9f0ff;
+  --color-border-dark: #9254de;
+  
+  --gradient-primary: linear-gradient(135deg, #722ed1, #9254de);
+  --gradient-secondary: linear-gradient(135deg, #391085, #22075e);
+}
+
+/* ========== 橙色主题 ========== */
+.theme-orange {
+  --color-primary: #fa8c16;
+  --color-primary-light: #ffa940;
+  --color-primary-dark: #d46b08;
+  
+  --color-secondary: #ad4e00;
+  --color-accent: #ffbb96;
+  
+  /* 背景色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #fff7e6;
+  --color-bg-tertiary: #ffe7ba;
+  --color-bg-dark: #fa8c16;
+  
+  /* 文字颜色 */
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #ffffff;
+  
+  /* 边框颜色 */
+  --color-border: #ffd591;
+  --color-border-light: #fff7e6;
+  --color-border-dark: #ffa940;
+  
+  --gradient-primary: linear-gradient(135deg, #fa8c16, #ffa940);
+  --gradient-secondary: linear-gradient(135deg, #ad4e00, #873800);
+}
+
+/* ========== 深色主题 ========== */
+.theme-dark {
+  --color-bg-primary: #141414;
+  --color-bg-secondary: #1f1f1f;
+  --color-bg-tertiary: #262626;
+  --color-bg-dark: #000000;
+  
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a6a6a6;
+  --color-text-tertiary: #737373;
+  --color-text-inverse: #000000;
+  
+  --color-border: #434343;
+  --color-border-light: #303030;
+  --color-border-dark: #595959;
+  
+  --color-secondary: #595959;
+  --color-accent: #ffffff;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 1px 6px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.7);
+}
+
+/* ========== 主题过渡动画 ========== */
+* {
+  transition: 
+    background-color var(--transition-normal) var(--ease-out),
+    color var(--transition-normal) var(--ease-out),
+    border-color var(--transition-normal) var(--ease-out),
+    box-shadow var(--transition-normal) var(--ease-out);
+}
+
+/* ========== 主题切换器样式 ========== */
+.theme-switcher {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal) var(--ease-out);
+  min-width: 80px;
+  user-select: none;
+}
+
+.theme-switcher:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.theme-switcher:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-switcher__current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  width: 100%;
+  justify-content: center;
+}
+
+.theme-switcher__dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: var(--z-index-dropdown);
+  min-width: 140px;
+  margin-top: var(--spacing-xs);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all var(--transition-normal) var(--ease-out);
+}
+
+.theme-switcher:hover .theme-switcher__dropdown,
+.theme-switcher__dropdown:hover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* 点击状态保持显示 */
+.theme-switcher__dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast) var(--ease-out);
+}
+
+.theme-option:hover {
+  background: var(--color-bg-secondary);
+}
+
+.theme-option:first-child {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.theme-option:last-child {
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.theme-option__preview {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-round);
+  border: 1px solid var(--color-border);
+}
+
+.theme-option__name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+/* 主题预览颜色 */
+.theme-option[data-theme="red"] .theme-option__preview {
+  background: #c20c0c;
+}
+
+.theme-option[data-theme="blue"] .theme-option__preview {
+  background: #1890ff;
+}
+
+.theme-option[data-theme="green"] .theme-option__preview {
+  background: #52c41a;
+}
+
+.theme-option[data-theme="purple"] .theme-option__preview {
+  background: #722ed1;
+}
+
+.theme-option[data-theme="orange"] .theme-option__preview {
+  background: #fa8c16;
+}
+
+.theme-option[data-theme="dark"] .theme-option__preview {
+  background: #141414;
+  border-color: #434343;
+}
+
+/* ========== 主题应用工具类 ========== */
+ themed-bg {
+  background-color: var(--color-bg-primary);
+}
+
+ themed-bg-secondary {
+  background-color: var(--color-bg-secondary);
+}
+
+ themed-text {
+  color: var(--color-text-primary);
+}
+
+ themed-text-secondary {
+  color: var(--color-text-secondary);
+}
+
+ themed-border {
+  border-color: var(--color-border);
+}
+
+ themed-primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+ themed-primary-text {
+  color: var(--color-primary);
+}
