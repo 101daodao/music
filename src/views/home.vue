@@ -24,19 +24,28 @@
 
       <!-- 推荐音乐区域 -->
       <section class="recommend-section">
-        <h2 class="section-title">🔥 热门推荐</h2>
-        <div class="music-grid">
-          <div 
-            v-for="(item, index) in recommendMusic" 
+        <div class="section-header">
+          <h2 class="section-title">🔥 热门推荐</h2>
+          <button
+            class="more-button"
+            @click="toggleShowMore"
+          >
+            {{ showMore ? '收起' : '更多 ›' }}
+          </button>
+        </div>
+        <div class="music-grid" :class="{ expanded: showMore }">
+          <div
+            v-for="(item, index) in displayRecommendMusic"
             :key="index"
             class="music-card"
             @click="playMusic(item)"
           >
             <div class="music-cover">
-              <img :src="item.cover" :alt="item.title" />
-              <div class="play-overlay">
-                <span class="play-icon">▶</span>
-              </div>
+              <img
+                :src="item.cover"
+                :alt="item.title"
+                @error="handleImageError"
+              />
             </div>
             <div class="music-info">
               <h3 class="music-title">{{ item.title }}</h3>
@@ -93,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { usePlayerStore } from '../stores/player.js'
 import { musicService } from '../api/music.js'
 import Carousel from '../components/Carousel.vue'
@@ -104,12 +113,18 @@ const playerStore = usePlayerStore()
 const loading = ref(true)
 const carouselItems = ref([])
 const recommendMusic = ref([])
+const showMore = ref(false)
 const latestMusic = ref([])
 const stats = ref({
   totalSongs: 0,
   totalArtists: 0,
   totalPlaylists: 0,
   activeUsers: '0'
+})
+
+// 计算属性：显示的热门歌曲
+const displayRecommendMusic = computed(() => {
+  return showMore.value ? recommendMusic.value : recommendMusic.value.slice(0, 10)
 })
 
 // 方法
@@ -150,22 +165,42 @@ const loadCarouselData = async () => {
   }
 }
 
-// 加载推荐音乐
+// 加载推荐音乐（使用歌手歌曲API）
 const loadRecommendMusic = async () => {
   try {
-    const result = await musicService.getPersonalizedPlaylists(6)
+    // 使用热门歌手ID 6452 获取热门歌曲
+    const result = await musicService.getArtistSongs(6452, {
+      order: 'hot',
+      limit: 20,
+      offset: 0
+    })
+    
     if (result.success) {
       recommendMusic.value = result.data.map(item => ({
         id: item.id,
-        title: item.name,
-        artist: item.creator,
-        cover: item.coverImgUrl,
-        duration: ''
+        title: item.title,
+        artist: item.artist,
+        cover: item.cover,
+        duration: item.duration
       }))
+      console.log('推荐音乐加载成功:', recommendMusic.value.length, '首歌曲')
+    } else {
+      console.error('推荐音乐加载失败:', result.error)
     }
   } catch (error) {
     console.error('加载推荐音乐失败:', error)
   }
+}
+
+// 处理图片加载错误
+const handleImageError = (event) => {
+  console.log('图片加载失败:', event.target.src)
+}
+
+// 切换显示更多
+const toggleShowMore = () => {
+  showMore.value = !showMore.value
+  console.log('切换显示状态:', showMore.value ? '展开' : '收起')
 }
 
 // 加载最新音乐
@@ -241,14 +276,44 @@ onMounted(async () => {
 }
 
 /* 区块标题样式 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
 .section-title {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-sm);
   border-bottom: 2px solid var(--color-primary);
   display: inline-block;
+  margin-bottom: 0;
+}
+
+.more-button {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast) var(--ease-out);
+}
+
+.more-button:hover {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+  transform: translateX(2px);
+}
+
+.more-button:active {
+  transform: scale(0.98);
 }
 
 /* 推荐音乐网格 */
@@ -256,7 +321,14 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--spacing-lg);
+  max-height: 600px;
+  overflow: hidden;
+  transition: max-height var(--transition-normal) var(--ease-out);
   margin-bottom: var(--spacing-xxl);
+}
+
+.music-grid.expanded {
+  max-height: none;
 }
 
 .music-card {
@@ -294,36 +366,6 @@ onMounted(async () => {
   transform: scale(1.05);
 }
 
-.play-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity var(--transition-normal) var(--ease-out);
-}
-
-.music-card:hover .play-overlay {
-  opacity: 1;
-}
-
-.play-icon {
-  color: var(--color-text-inverse);
-  font-size: var(--font-size-xl);
-  background: var(--color-primary);
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-md);
-}
 
 .music-info {
   padding: var(--spacing-md);

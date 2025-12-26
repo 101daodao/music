@@ -14,8 +14,10 @@ import { storeToRefs } from 'pinia'
 import AppLayout from './layout/layout.vue'
 import MusicPlayer from './components/MusicPlayer.vue'
 import { useThemeStore } from './stores/theme.js'
+import { useAuthStore } from './stores/auth.js'
 
 const themeStore = useThemeStore()
+const authStore = useAuthStore()
 
 // 解构主题状态和方法，保持响应性
 const { currentTheme } = storeToRefs(themeStore)
@@ -35,6 +37,9 @@ onMounted(() => {
   // 初始化主题
   initTheme()
   watchSystemTheme()
+  
+  // 初始化认证状态
+  authStore.initAuthState()
   
   // 设置应用基础配置
   document.documentElement.setAttribute('data-app-version', '1.0.0')

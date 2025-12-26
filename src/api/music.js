@@ -424,5 +424,95 @@ export const musicService = {
     }
     
     return lyrics.sort((a, b) => a.time - b.time)
+  },
+
+  // 获取歌手全部歌曲
+  async getArtistSongs(artistId, options = {}) {
+    const { order = 'hot', limit = 50, offset = 0 } = options
+    try {
+      const response = await musicApi.getArtistSongs(artistId, { order, limit, offset })
+      const songs = response.songs || []
+      
+      // 获取所有歌曲ID
+      const songIds = songs.map(item => item.id).join(',')
+      
+      // 批量获取歌曲详情以获取正确的图片URL
+      let detailResponse
+      try {
+        detailResponse = await musicApi.getSongDetail(songIds)
+      } catch (detailError) {
+        console.warn('获取歌曲详情失败:', detailError)
+      }
+      
+      // 创建歌曲详情映射
+      const detailMap = {}
+      if (detailResponse?.songs) {
+        detailResponse.songs.forEach(song => {
+          detailMap[song.id] = song
+        })
+      }
+      
+      return {
+        success: true,
+        data: songs.map(item => {
+          const detail = detailMap[item.id]
+          // 优先使用歌曲详情中的图片URL
+          let coverUrl = detail?.al?.picUrl || ''
+          
+          return {
+            id: item.id,
+            title: item.name || '未知歌曲',
+            artist: item.ar?.[0]?.name || '未知歌手',
+            album: item.al?.name || '未知专辑',
+            cover: coverUrl,
+            duration: item.duration || 0
+          }
+        }),
+        total: response.total || 0,
+        more: response.more || false
+      }
+    } catch (error) {
+      console.error('获取歌手歌曲失败:', error)
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      }
+    }
+  },
+
+  // 获取歌曲详情（单个）
+  async getSongDetail(songId) {
+    try {
+      const response = await musicApi.getSongDetail(songId)
+      
+      if (!response.songs || response.songs.length === 0) {
+        return {
+          success: false,
+          error: '歌曲不存在',
+          data: null
+        }
+      }
+
+      const song = response.songs[0]
+      return {
+        success: true,
+        data: {
+          id: song.id,
+          name: song.name,
+          artist: song.ar?.[0]?.name || '未知歌手',
+          album: song.al?.name || '未知专辑',
+          picUrl: song.al?.picUrl || '',
+          duration: song.duration || 0
+        }
+      }
+    } catch (error) {
+      console.error('获取歌曲详情失败:', error)
+      return {
+        success: false,
+        error: error.message,
+        data: null
+      }
+    }
   }
 }

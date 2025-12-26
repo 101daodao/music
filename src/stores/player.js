@@ -206,7 +206,6 @@ export const usePlayerStore = defineStore('player', () => {
     
     const song = playlist.value[index]
     currentIndex.value = index
-    currentSong.value = song
     
     // 保存当前播放状态
     const wasPlaying = isPlaying.value
@@ -219,6 +218,23 @@ export const usePlayerStore = defineStore('player', () => {
     isPlaying.value = false
     
     try {
+      // 获取歌曲详情以更新封面信息
+      try {
+        const detailResult = await musicService.getSongDetail(song.id)
+        if (detailResult.success && detailResult.data?.picUrl) {
+          // 更新歌曲的封面URL
+          playlist.value[index] = {
+            ...song,
+            cover: detailResult.data.picUrl
+          }
+          currentSong.value = playlist.value[index]
+          console.log('歌曲封面已更新:', detailResult.data.picUrl)
+        }
+      } catch (detailError) {
+        console.warn('获取歌曲详情失败，使用原有数据:', detailError)
+        currentSong.value = song
+      }
+      
       // 获取歌曲播放URL
       console.log('正在获取歌曲播放URL:', song.id)
       const urlResult = await musicService.getSongUrl(song.id)
@@ -250,6 +266,8 @@ export const usePlayerStore = defineStore('player', () => {
       }
     } catch (error) {
       console.error('加载歌曲时发生错误:', error)
+      // 确保设置currentSong，即使出错
+      currentSong.value = song
       // 使用备用音频
       const fallbackAudio = audioUtils.getFallbackAudio()
       if (audioElement.value) {
@@ -264,14 +282,11 @@ export const usePlayerStore = defineStore('player', () => {
 
   // 播放特定歌曲
   const playSong = async (song) => {
-    const songIndex = playlist.value.findIndex(s => s.id === song.id)
-    if (songIndex === -1) {
-      // 如果歌曲不在播放列表中，添加到列表
-      playlist.value.push(song)
-      await loadSong(playlist.value.length - 1)
-    } else {
-      await loadSong(songIndex)
-    }
+    // 移除播放列表中所有相同ID的歌曲
+    playlist.value = playlist.value.filter(s => s.id !== song.id)
+    // 添加新的歌曲
+    playlist.value.push(song)
+    await loadSong(playlist.value.length - 1)
     // 等待歌曲加载完成后播放
     await play()
   }

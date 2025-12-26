@@ -95,18 +95,48 @@
         </div>
         
         <!-- 用户信息 -->
-        <div class="user-info">
-          <div class="user-avatar">U</div>
-          <span class="user-name">用户</span>
+        <div class="user-info" @click="handleUserClick">
+          <div v-if="authStore.isLoggedIn && authStore.avatar" class="user-avatar">
+            <img :src="authStore.avatar" alt="用户头像" class="user-avatar__img">
+          </div>
+          <div v-else class="user-avatar user-avatar--default">
+            U
+          </div>
+          <span class="user-name">{{ authStore.isLoggedIn ? authStore.nickname : '未登录' }}</span>
+          
+          <!-- 用户下拉菜单 -->
+          <div v-if="authStore.isLoggedIn" class="user-dropdown" :class="{ show: showUserDropdown }" @click.stop>
+            <div class="user-dropdown__info">
+              <img :src="authStore.avatar" alt="用户头像" class="user-dropdown__avatar">
+              <div class="user-dropdown__text">
+                <div class="user-dropdown__name">{{ authStore.nickname }}</div>
+                <div class="user-dropdown__email">网易云音乐用户</div>
+              </div>
+            </div>
+            <div class="user-dropdown__divider"></div>
+            <button class="user-dropdown__item" @click="handleLogout">
+              <span>退出登录</span>
+              <span>🚪</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
+    
+    <!-- 登录弹窗 -->
+    <LoginModal
+      :show="showLoginModal"
+      @close="showLoginModal = false"
+      @login-success="handleLoginSuccess"
+    />
   </header>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import SearchBox from '../components/SearchBox.vue'
+import LoginModal from '../components/LoginModal.vue'
+import { useAuthStore } from '../stores/auth.js'
 
 // Props
 const props = defineProps({
@@ -127,8 +157,13 @@ const props = defineProps({
 // Emits
 const emit = defineEmits(['toggleSidebar', 'changeTheme'])
 
+// Store
+const authStore = useAuthStore()
+
 // 响应式数据
 const showThemeDropdown = ref(false)
+const showUserDropdown = ref(false)
+const showLoginModal = ref(false)
 const isMobile = ref(false)
 
 // 计算属性
@@ -169,6 +204,28 @@ const toggleThemeDropdown = () => {
   showThemeDropdown.value = !showThemeDropdown.value
 }
 
+// 用户信息点击
+const handleUserClick = () => {
+  if (authStore.isLoggedIn) {
+    showUserDropdown.value = !showUserDropdown.value
+  } else {
+    showLoginModal.value = true
+  }
+}
+
+// 登录成功回调
+const handleLoginSuccess = () => {
+  console.log('登录成功')
+}
+
+// 退出登录
+const handleLogout = async () => {
+  if (confirm('确定要退出登录吗？')) {
+    await authStore.logout()
+    showUserDropdown.value = false
+  }
+}
+
 // 检查是否为移动端
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768
@@ -179,6 +236,11 @@ const handleClickOutside = (event) => {
   const themeSwitcher = document.querySelector('.theme-switcher')
   if (themeSwitcher && !themeSwitcher.contains(event.target)) {
     showThemeDropdown.value = false
+  }
+  
+  const userInfo = document.querySelector('.user-info')
+  if (userInfo && !userInfo.contains(event.target)) {
+    showUserDropdown.value = false
   }
 }
 
@@ -260,8 +322,135 @@ onUnmounted(() => {
 }
 
 /* 用户信息样式增强 */
-.user-info:hover {
+.user-info {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  transition: all var(--transition-fast) var(--ease-out);
+  user-select: none;
+}
+
+.user-info:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary, #c20c0c), #ff4d4f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.user-avatar--default {
+  background: linear-gradient(135deg, var(--color-primary, #c20c0c), #ff4d4f);
+}
+
+.user-avatar__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+/* 用户下拉菜单 */
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 240px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all var(--transition-fast) var(--ease-out);
+  z-index: var(--z-index-dropdown);
+}
+
+.user-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.user-dropdown__info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.user-dropdown__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-dropdown__text {
+  flex: 1;
+  overflow: hidden;
+}
+
+.user-dropdown__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-dropdown__email {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.user-dropdown__divider {
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 0 8px;
+}
+
+.user-dropdown__item {
+  width: 100%;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--ease-out);
+}
+
+.user-dropdown__item:hover {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-primary, #c20c0c);
 }
 
 /* 搜索框焦点效果 */
