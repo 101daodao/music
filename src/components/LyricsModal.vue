@@ -1,8 +1,8 @@
 <template>
-  <div v-if="visible" class="fullscreen-lyrics">
+  <div v-if="showLyricsModal" class="fullscreen-lyrics">
       <!-- 顶部栏 -->
       <div class="lyrics-header-bar">
-        <button class="close-btn" @click="closeModal">
+        <button class="close-btn" @click="hideLyricsModal">
           <el-icon><ArrowDown /></el-icon>
         </button>
         <div class="song-info-bar">
@@ -50,6 +50,7 @@
                 :class="{ active: index === currentLyricIndex }"
                 @click="seekToLyric(line.time)"
               >
+                <span class="lyric-time">{{ formatTime(line.time) }}</span>
                 <p class="lyric-content">{{ line.text }}</p>
               </div>
             </div>
@@ -130,17 +131,6 @@ import {
   List
 } from '@element-plus/icons-vue'
 
-// Props
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false
-  }
-})
-
-// Emits
-const emit = defineEmits(['close'])
-
 // Store
 const playerStore = usePlayerStore()
 
@@ -151,13 +141,16 @@ const {
   currentLyrics,
   currentLyricIndex,
   playlist,
-  currentIndex
+  currentIndex,
+  showLyricsModal
 } = storeToRefs(playerStore)
 
 const {
   seekToLyric,
   playSong,
-  loadSong
+  loadSong,
+  hideLyricsModal,
+  formatTime
 } = playerStore
 
 // 本地状态
@@ -208,12 +201,9 @@ const formatAlbumName = (album) => {
 }
 
 // 方法
-const closeModal = () => {
-  emit('close')
-}
 
-// 监听 visible 变化
-watch(() => props.visible, (newVal) => {
+// 监听 showLyricsModal 变化
+watch(() => showLyricsModal.value, (newVal) => {
   if (newVal) {
     nextTick(() => {
       scrollToCurrentLyric()
@@ -277,7 +267,7 @@ const scrollToCurrentLyric = () => {
 
 // 监听当前歌曲变化
 watch(() => currentSong.value?.id, (newId) => {
-  if (newId && props.visible) {
+  if (newId && showLyricsModal.value) {
     loading.value = true
     setTimeout(() => {
       loading.value = false
@@ -288,7 +278,7 @@ watch(() => currentSong.value?.id, (newId) => {
 
 // 监听歌词索引变化，自动滚动
 watch(currentLyricIndex, (newIndex) => {
-  if (newIndex >= 0 && props.visible) {
+  if (newIndex >= 0 && showLyricsModal.value) {
     nextTick(() => {
       scrollToCurrentLyric()
     })
@@ -626,11 +616,30 @@ watch(currentLyricIndex, (newIndex) => {
   transform: scale(0.95);
   font-size: var(--font-size-lg);
   line-height: 1.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+}
+
+.lyric-time {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
+  min-width: 50px;
+  opacity: 0.6;
+}
+
+.lyric-content {
+  flex: 1;
 }
 
 .lyric-item:hover {
   opacity: 0.7;
   transform: scale(0.98);
+}
+
+.lyric-item:hover .lyric-time {
+  opacity: 0.8;
 }
 
 .lyric-item.active {
@@ -640,6 +649,11 @@ watch(currentLyricIndex, (newIndex) => {
   font-size: 24px;
   font-weight: var(--font-weight-bold);
   text-shadow: 0 0 30px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.lyric-item.active .lyric-time {
+  color: var(--color-primary);
+  opacity: 0.8;
 }
 
 .lyric-item.active::before {

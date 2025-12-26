@@ -24,6 +24,9 @@ export const usePlayerStore = defineStore('player', () => {
   const currentLyricIndex = ref(0)
   const lyricsOffset = ref(0)
 
+  // 歌词弹窗状态
+  const showLyricsModal = ref(false)
+
   // 音频元素引用
   const audioElement = ref(null)
 
@@ -212,6 +215,8 @@ export const usePlayerStore = defineStore('player', () => {
     if (audioElement.value) {
       audioElement.value.pause()
     }
+    // 更新播放状态
+    isPlaying.value = false
     
     try {
       // 获取歌曲播放URL
@@ -267,7 +272,8 @@ export const usePlayerStore = defineStore('player', () => {
     } else {
       await loadSong(songIndex)
     }
-    play()
+    // 等待歌曲加载完成后播放
+    await play()
   }
 
   // 设置播放列表
@@ -375,6 +381,19 @@ export const usePlayerStore = defineStore('player', () => {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
+  // 歌词弹窗控制方法
+  const toggleLyricsModal = () => {
+    showLyricsModal.value = !showLyricsModal.value
+  }
+
+  const showLyricsModalState = () => {
+    showLyricsModal.value = true
+  }
+
+  const hideLyricsModal = () => {
+    showLyricsModal.value = false
+  }
+
   // 搜索功能
   const searchSongs = async (query, limit = 20) => {
     try {
@@ -401,6 +420,7 @@ export const usePlayerStore = defineStore('player', () => {
     currentLyrics,
     currentLyricIndex,
     lyricsOffset,
+    showLyricsModal,
     audioElement,
     
     // 计算属性
@@ -431,6 +451,9 @@ export const usePlayerStore = defineStore('player', () => {
     updateCurrentLyric,
     formatTime,
     searchSongs,
+    toggleLyricsModal,
+    showLyricsModalState,
+    hideLyricsModal,
     
     // 音频事件
     onTimeUpdate,

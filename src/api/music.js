@@ -52,6 +52,18 @@ export const formatMusicData = {
       playCount: data.playCount || 0,
       duration: data.duration || 0
     }
+  },
+
+  // 格式化轮播图数据（用于推荐新音乐）
+  formatCarousel(item) {
+    return {
+      id: item.id,
+      title: item.name || item.song?.name || '未知歌曲',
+      artist: item.artist || item.song?.artists?.[0]?.name || item.ar?.[0]?.name || '未知歌手',
+      cover: item.picUrl || item.song?.album?.picUrl || item.al?.picUrl || '',
+      album: item.album || item.song?.album?.name || item.al?.name || '未知专辑',
+      duration: item.duration || item.song?.duration || 0
+    }
   }
 }
 
@@ -82,6 +94,26 @@ export const musicService = {
       return {
         success: true,
         data: response.list || []
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      }
+    }
+  },
+
+  // 获取轮播图数据（推荐新音乐）
+  async getCarouselData(limit = 10) {
+    try {
+      const response = await musicApi.getPersonalizedNewSongs()
+      const carousels = response.result?.slice(0, limit).map(formatMusicData.formatCarousel) || []
+      
+      return {
+        success: true,
+        data: carousels,
+        total: carousels.length
       }
     } catch (error) {
       return {

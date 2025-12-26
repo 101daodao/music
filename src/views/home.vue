@@ -8,6 +8,20 @@
     
     <!-- 页面内容 -->
     <div class="page-content">
+      <!-- 轮播图区域 -->
+      <section class="carousel-section">
+        <Carousel
+          v-if="carouselItems.length > 0"
+          :items="carouselItems"
+          :autoplay="true"
+          :interval="4000"
+          @item-click="handleCarouselItemClick"
+        />
+        <div v-else-if="loading" class="loading-placeholder">
+          加载中...
+        </div>
+      </section>
+
       <!-- 推荐音乐区域 -->
       <section class="recommend-section">
         <h2 class="section-title">🔥 热门推荐</h2>
@@ -80,105 +94,75 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { usePlayerStore } from '../stores/player.js'
+import { musicService } from '../api/music.js'
+import Carousel from '../components/Carousel.vue'
+
+const playerStore = usePlayerStore()
 
 // 响应式数据
-const recommendMusic = ref([
-  {
-    id: 1,
-    title: '夜曲',
-    artist: '周杰伦',
-    cover: 'https://picsum.photos/200/200?random=1',
-    duration: '3:46'
-  },
-  {
-    id: 2,
-    title: '晴天',
-    artist: '周杰伦',
-    cover: 'https://picsum.photos/200/200?random=2',
-    duration: '4:29'
-  },
-  {
-    id: 3,
-    title: '告白气球',
-    artist: '周杰伦',
-    cover: 'https://picsum.photos/200/200?random=3',
-    duration: '3:35'
-  },
-  {
-    id: 4,
-    title: '稻香',
-    artist: '周杰伦',
-    cover: 'https://picsum.photos/200/200?random=4',
-    duration: '3:43'
-  },
-  {
-    id: 5,
-    title: '青花瓷',
-    artist: '周杰伦',
-    cover: 'https://picsum.photos/200/200?random=5',
-    duration: '3:57'
-  },
-  {
-    id: 6,
-    title: '七里香',
-    artist: '周杰伦',
-    cover: 'https://picsum.photos/200/200?random=6',
-    duration: '4:58'
-  }
-])
-
-const latestMusic = ref([
-  {
-    id: 7,
-    title: '最伟大的作品',
-    artist: '周杰伦',
-    duration: '3:52'
-  },
-  {
-    id: 8,
-    title: '等你下课',
-    artist: '周杰伦',
-    duration: '4:10'
-  },
-  {
-    id: 9,
-    title: '说好不哭',
-    artist: '周杰伦',
-    duration: '3:31'
-  },
-  {
-    id: 10,
-    title: 'Mojito',
-    artist: '周杰伦',
-    duration: '3:05'
-  },
-  {
-    id: 11,
-    title: '红颜如霜',
-    artist: '周杰伦',
-    duration: '4:22'
-  }
-])
-
+const loading = ref(true)
+const carouselItems = ref([])
+const recommendMusic = ref([])
+const latestMusic = ref([])
 const stats = ref({
-  totalSongs: 5000,
-  totalArtists: 500,
-  totalPlaylists: 1000,
-  activeUsers: '10万+'
+  totalSongs: 0,
+  totalArtists: 0,
+  totalPlaylists: 0,
+  activeUsers: '0'
 })
 
 // 方法
 const playMusic = (music) => {
   console.log('播放音乐:', music.title)
-  // 这里可以添加播放音乐的逻辑
-  // 例如：调用音乐播放器API或跳转到播放页面
+  // 将音乐添加到播放列表并播放
+  playerStore.playSong(music)
+}
+
+// 处理轮播图点击
+const handleCarouselItemClick = (item) => {
+  console.log('点击轮播图项目:', item.title)
+  // 直接播放点击的歌曲，确保字段格式与播放器Store一致
+  playerStore.playSong({
+    id: item.id,
+    title: item.title,
+    artist: item.artist,
+    album: item.album || '未知专辑',
+    cover: item.cover || 'https://picsum.photos/200/200?default=fallback',
+    duration: item.duration || 0
+  })
+}
+
+// 加载轮播图数据
+const loadCarouselData = async () => {
+  try {
+    const result = await musicService.getCarouselData(5)
+    if (result.success) {
+      carouselItems.value = result.data.map(item => ({
+        id: item.id,
+        title: item.title,
+        artist: item.artist,
+        cover: item.cover
+      }))
+    }
+  } catch (error) {
+    console.error('加载轮播图数据失败:', error)
+  }
 }
 
 // 加载推荐音乐
 const loadRecommendMusic = async () => {
   try {
-    // 这里可以调用API获取推荐音乐数据
-    console.log('加载推荐音乐...')
+    const result = await musicService.getPersonalizedPlaylists(6)
+    if (result.success) {
+      recommendMusic.value = result.data.map(item => ({
+        id: item.id,
+        title: item.name,
+        artist: item.creator,
+        cover: item.coverImgUrl,
+        duration: ''
+      }))
+    }
   } catch (error) {
     console.error('加载推荐音乐失败:', error)
   }
@@ -187,21 +171,59 @@ const loadRecommendMusic = async () => {
 // 加载最新音乐
 const loadLatestMusic = async () => {
   try {
-    // 这里可以调用API获取最新音乐数据
-    console.log('加载最新音乐...')
+    const result = await musicService.getPersonalizedNewSongs(5)
+    if (result.success) {
+      latestMusic.value = result.data.map(item => ({
+        id: item.id,
+        title: item.name,
+        artist: item.artist,
+        duration: formatDuration(item.duration)
+      }))
+    }
   } catch (error) {
     console.error('加载最新音乐失败:', error)
   }
 }
 
+// 格式化时长
+const formatDuration = (ms) => {
+  if (!ms) return '0:00'
+  const minutes = Math.floor(ms / 60000)
+  const seconds = Math.floor((ms % 60000) / 1000)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
 // 生命周期
-onMounted(() => {
-  loadRecommendMusic()
-  loadLatestMusic()
+onMounted(async () => {
+  try {
+    loading.value = true
+    await Promise.all([
+      loadCarouselData(),
+      loadRecommendMusic(),
+      loadLatestMusic()
+    ])
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
 <style scoped>
+/* 轮播图区域 */
+.carousel-section {
+  margin-bottom: var(--spacing-xxl);
+}
+
+.loading-placeholder {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+}
+
 /* 页面整体样式 */
 .home-page {
   animation: pageFadeIn 0.6s ease-out;

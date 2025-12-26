@@ -3,7 +3,7 @@
     <!-- 播放器主体 -->
     <div class="player-main" @click="toggleLyricsModal">
       <!-- 歌曲信息和封面 -->
-      <div class="track-info">
+      <div class="track-info" @click.stop>
         <div class="album-cover" :class="{ rotating: isPlaying }">
           <img :src="currentSong?.cover || defaultCover" :alt="currentSong?.title" />
           <div class="play-overlay">
@@ -19,22 +19,22 @@
       <!-- 播放控制 -->
       <div class="player-controls">
         <!-- 上一首 -->
-        <button class="control-btn" @click="prevSong" :disabled="!canPrev">
+        <button class="control-btn" @click.stop="prevSong" :disabled="!canPrev">
           <el-icon><DArrowLeft /></el-icon>
         </button>
         
         <!-- 播放/暂停 -->
-        <button class="play-pause-btn" @click="togglePlay">
+        <button class="play-pause-btn" @click.stop="togglePlay">
           <el-icon><VideoPause v-if="isPlaying" /><VideoPlay v-else /></el-icon>
         </button>
         
         <!-- 下一首 -->
-        <button class="control-btn" @click="nextSong" :disabled="!canNext">
+        <button class="control-btn" @click.stop="nextSong" :disabled="!canNext">
           <el-icon><DArrowRight /></el-icon>
         </button>
         
         <!-- 播放模式 -->
-        <button class="control-btn mode-btn" @click="togglePlayMode" :title="playModeTitle">
+        <button class="control-btn mode-btn" @click.stop="togglePlayMode" :title="playModeTitle">
           <el-icon>
             <RefreshRight v-if="playMode === 'single'" />
             <Sort v-else-if="playMode === 'random'" />
@@ -44,7 +44,7 @@
         
         <!-- 音量控制 -->
         <div class="volume-control">
-          <button class="control-btn" @click="toggleMute">
+          <button class="control-btn" @click.stop="toggleMute">
             <el-icon>
               <Mute v-if="isMuted || volume === 0" />
               <Microphone v-else-if="volume < 30" />
@@ -67,7 +67,7 @@
       <!-- 进度条 -->
       <div class="progress-section">
         <span class="time-text">{{ formatTime(currentTime) }}</span>
-        <div class="progress-bar" @click="seekTo">
+        <div class="progress-bar" @click.stop="seekTo">
           <div class="progress-buffer" :style="{ width: bufferProgress + '%' }"></div>
           <div class="progress-current" :style="{ width: progressPercentage + '%' }"></div>
           <div class="progress-thumb" :style="{ left: progressPercentage + '%' }"></div>
@@ -78,10 +78,7 @@
     
     <!-- 歌词弹窗 -->
     <Teleport to="body">
-      <LyricsModal
-        :visible="showLyricsModal"
-        @close="closeLyricsModal"
-      />
+      <LyricsModal />
     </Teleport>
     
     <!-- 音频元素 -->
@@ -139,6 +136,7 @@ const {
   currentLyrics,
   currentLyricIndex,
   lyricsOffset,
+  showLyricsModal,
   progressPercentage,
   playModeIcon,
   playModeTitle,
@@ -166,6 +164,8 @@ const {
   clearPlaylist,
   loadLyrics,
   updateCurrentLyric,
+  toggleLyricsModal,
+  hideLyricsModal,
   formatTime,
   searchSongs,
   onTimeUpdate,
@@ -177,23 +177,10 @@ const {
 // 从主题store中解构，保持响应性
 const { currentTheme } = storeToRefs(themeStore)
 
-// 弹窗控制
-const showLyricsModal = ref(false)
-
 // 监听主题变化，确保组件响应主题切换
 watch(() => themeStore.currentTheme, (newTheme) => {
   console.log('播放器主题已切换到:', newTheme)
 })
-
-// 切换歌词弹窗
-const toggleLyricsModal = () => {
-  showLyricsModal.value = !showLyricsModal.value
-}
-
-// 关闭歌词弹窗
-const closeLyricsModal = () => {
-  showLyricsModal.value = false
-}
 
 // 初始化音乐数据
 const initializeData = async () => {
