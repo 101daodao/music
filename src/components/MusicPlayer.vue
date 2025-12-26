@@ -1,7 +1,7 @@
 <template>
   <div class="music-player" :class="currentTheme">
     <!-- 播放器主体 -->
-    <div class="player-main" @click="openLyricsModal">
+    <div class="player-main" @click="toggleLyricsModal">
       <!-- 歌曲信息和封面 -->
       <div class="track-info">
         <div class="album-cover" :class="{ rotating: isPlaying }">
@@ -17,7 +17,7 @@
       </div>
       
       <!-- 播放控制 -->
-      <div class="player-controls" @click.stop>
+      <div class="player-controls">
         <!-- 上一首 -->
         <button class="control-btn" @click="prevSong" :disabled="!canPrev">
           <el-icon><DArrowLeft /></el-icon>
@@ -65,7 +65,7 @@
       </div>
       
       <!-- 进度条 -->
-      <div class="progress-section" @click.stop>
+      <div class="progress-section">
         <span class="time-text">{{ formatTime(currentTime) }}</span>
         <div class="progress-bar" @click="seekTo">
           <div class="progress-buffer" :style="{ width: bufferProgress + '%' }"></div>
@@ -185,9 +185,9 @@ watch(() => themeStore.currentTheme, (newTheme) => {
   console.log('播放器主题已切换到:', newTheme)
 })
 
-// 打开歌词弹窗
-const openLyricsModal = () => {
-  showLyricsModal.value = true
+// 切换歌词弹窗
+const toggleLyricsModal = () => {
+  showLyricsModal.value = !showLyricsModal.value
 }
 
 // 关闭歌词弹窗
