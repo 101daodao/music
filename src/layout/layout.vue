@@ -15,8 +15,8 @@
         <nav class="app-sidebar__content">
           <ul class="sidebar-menu">
             <li class="sidebar-menu__item">
-              <router-link 
-                to="/" 
+              <router-link
+                to="/"
                 class="sidebar-menu__link"
                 :class="{ active: $route.path === '/' }"
                 @click="closeMobileSidebar"
@@ -26,40 +26,7 @@
               </router-link>
             </li>
             <li class="sidebar-menu__item">
-              <router-link 
-                to="/mine" 
-                class="sidebar-menu__link"
-                :class="{ active: $route.path === '/mine' }"
-                @click="closeMobileSidebar"
-              >
-                <span class="sidebar-menu__icon">👤</span>
-                <span class="sidebar-menu__text">个人中心</span>
-              </router-link>
-            </li>
-            <li class="sidebar-menu__item">
-              <router-link 
-                to="/discover" 
-                class="sidebar-menu__link"
-                :class="{ active: $route.path === '/discover' }"
-                @click="closeMobileSidebar"
-              >
-                <span class="sidebar-menu__icon">🎵</span>
-                <span class="sidebar-menu__text">发现音乐</span>
-              </router-link>
-            </li>
-            <li class="sidebar-menu__item">
-              <router-link 
-                to="/playlist" 
-                class="sidebar-menu__link"
-                :class="{ active: $route.path === '/playlist' }"
-                @click="closeMobileSidebar"
-              >
-                <span class="sidebar-menu__icon">📚</span>
-                <span class="sidebar-menu__text">播放列表</span>
-              </router-link>
-            </li>
-            <li class="sidebar-menu__item">
-              <router-link 
+              <router-link
                 to="/rank"
                 class="sidebar-menu__link"
                 :class="{ active: $route.path === '/rank' }"

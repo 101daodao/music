@@ -256,5 +256,141 @@ export const musicService = {
         data: []
       }
     }
+  },
+
+  // 获取歌词
+  async getLyrics(songId) {
+    try {
+      const response = await musicApi.getLyrics(songId)
+      
+      if (!response.lrc) {
+        return {
+          success: false,
+          error: '该歌曲暂无歌词',
+          data: null
+        }
+      }
+
+      // 解析歌词格式 [时间戳]歌词内容
+      const lyricsText = response.lrc.lyric || ''
+      const lyrics = this.parseLyrics(lyricsText)
+      
+      return {
+        success: true,
+        data: {
+          lyrics,
+          hasTranslation: !!response.tlyric?.lyric,
+          translation: response.tlyric?.lyric || '',
+          hasYrc: !!response.yrc?.lyric,
+          yrc: response.yrc?.lyric || ''
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: null
+      }
+    }
+  },
+
+  // 获取逐字歌词
+  async getNewLyrics(songId) {
+    try {
+      const response = await musicApi.getNewLyrics(songId)
+      
+      if (!response.yrc?.lyric) {
+        return {
+          success: false,
+          error: '该歌曲暂无逐字歌词',
+          data: null
+        }
+      }
+
+      const yrcLyrics = response.yrc.lyric
+      const lyrics = this.parseYrcLyrics(yrcLyrics)
+      
+      return {
+        success: true,
+        data: {
+          lyrics,
+          version: response.yrc?.version || 1,
+          hasTranslation: !!response.yrc?.tran,
+          translation: response.yrc?.tran || ''
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: null
+      }
+    }
+  },
+
+  // 解析普通歌词格式
+  parseLyrics(lyricsText) {
+    if (!lyricsText) return []
+    
+    const lines = lyricsText.split('\n')
+    const lyrics = []
+    
+    for (const line of lines) {
+      // 匹配时间戳格式 [mm:ss.xxx] 或 [mm:ss]
+      const timeMatch = line.match(/^\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\]/)
+      
+      if (timeMatch) {
+        const minutes = parseInt(timeMatch[1])
+        const seconds = parseInt(timeMatch[2])
+        const milliseconds = timeMatch[3] ? parseInt(timeMatch[3].padEnd(3, '0')) : 0
+        
+        const time = minutes * 60 + seconds + milliseconds / 1000
+        const text = line.replace(/^\[\d{2}:\d{2}(?:\.\d{2,3})?\]/, '').trim()
+        
+        if (text) {
+          lyrics.push({ time, text })
+        }
+      }
+    }
+    
+    return lyrics.sort((a, b) => a.time - b.time)
+  },
+
+  // 解析逐字歌词格式
+  parseYrcLyrics(yrcText) {
+    if (!yrcText) return []
+    
+    const lyrics = []
+    const lines = yrcText.split('\n')
+    
+    for (const line of lines) {
+      // 匹配JSON格式的歌词元数据
+      if (line.startsWith('{') && line.endsWith('}')) {
+        // 跳过元数据行
+        continue
+      }
+      
+      // 匹配逐字歌词格式 [开始时间,持续时间](逐字时间戳...)
+      const match = line.match(/^\[(\d+),(\d+)\](.+)$/)
+      if (match) {
+        const startTime = parseInt(match[1]) / 1000 // 转换为秒
+        const duration = parseInt(match[2]) / 1000
+        const content = match[3]
+        
+        // 简化处理，提取纯文本
+        const text = content.replace(/\(\d+,\d+,\d+\)/g, '').trim()
+        
+        if (text) {
+          lyrics.push({
+            time: startTime,
+            text,
+            duration,
+            originalLine: line
+          })
+        }
+      }
+    }
+    
+    return lyrics.sort((a, b) => a.time - b.time)
   }
 }

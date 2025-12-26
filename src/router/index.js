@@ -2,9 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // 路由组件懒加载
 const Home = () => import('../views/home.vue')
-const Mine = () => import('../views/mine.vue')
-const Discover = () => import('../views/discover.vue')
-const Playlist = () => import('../views/playlist.vue')
 const Rank = () => import('../views/rank.vue')
 
 // 路由配置
@@ -17,36 +14,6 @@ const routes = [
       title: '首页',
       keepAlive: true,
       requiresAuth: false
-    }
-  },
-  {
-    path: '/mine',
-    name: 'Mine',
-    component: Mine,
-    meta: {
-      title: '个人中心',
-      keepAlive: false,
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/discover',
-    name: 'Discover',
-    component: Discover,
-    meta: {
-      title: '发现音乐',
-      keepAlive: true,
-      requiresAuth: false
-    }
-  },
-  {
-    path: '/playlist',
-    name: 'Playlist',
-    component: Playlist,
-    meta: {
-      title: '播放列表',
-      keepAlive: true,
-      requiresAuth: true
     }
   },
   {

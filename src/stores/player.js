@@ -328,17 +328,30 @@ export const usePlayerStore = defineStore('player', () => {
   // 歌词相关方法
   const loadLyrics = async (songId) => {
     try {
-      // 这里应该调用歌词API，暂时使用模拟数据
-      currentLyrics.value = [
-        { time: 0, text: '暂无歌词显示' },
-        { time: 5, text: '这是示例歌词' },
-        { time: 10, text: '歌词会随时间滚动' },
-        { time: 15, text: '当前歌词会高亮显示' }
-      ]
+      // 首先尝试获取逐字歌词
+      const newLyricsResult = await musicService.getNewLyrics(songId)
+      
+      if (newLyricsResult.success && newLyricsResult.data.lyrics.length > 0) {
+        currentLyrics.value = newLyricsResult.data.lyrics
+        console.log('加载逐字歌词成功:', newLyricsResult.data.lyrics.length, '行')
+      } else {
+        // 如果逐字歌词不可用，尝试获取普通歌词
+        const lyricsResult = await musicService.getLyrics(songId)
+        
+        if (lyricsResult.success && lyricsResult.data.lyrics.length > 0) {
+          currentLyrics.value = lyricsResult.data.lyrics
+          console.log('加载普通歌词成功:', lyricsResult.data.lyrics.length, '行')
+        } else {
+          // 如果都没有，显示暂无歌词
+          currentLyrics.value = [{ time: 0, text: '暂无歌词' }]
+          console.warn('该歌曲暂无可用歌词')
+        }
+      }
+      
       currentLyricIndex.value = 0
     } catch (error) {
       console.error('加载歌词失败:', error)
-      currentLyrics.value = [{ time: 0, text: '暂无歌词' }]
+      currentLyrics.value = [{ time: 0, text: '加载歌词失败' }]
     }
   }
 
@@ -347,7 +360,6 @@ export const usePlayerStore = defineStore('player', () => {
       if (currentTime.value >= currentLyrics.value[i].time) {
         if (currentLyricIndex.value !== i) {
           currentLyricIndex.value = i
-          // 这里可以添加歌词滚动逻辑
         }
         break
       }

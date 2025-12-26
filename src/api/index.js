@@ -98,6 +98,16 @@ export const musicApi = {
   // 10. 搜索音乐
   searchMusic(keyword, limit = 20) {
     return retryRequest(() => api.get(`/search?keywords=${encodeURIComponent(keyword)}&limit=${limit}`))
+  },
+
+  // 11. 获取歌词
+  getLyrics(songId) {
+    return retryRequest(() => api.get(`/lyric?id=${songId}`))
+  },
+
+  // 12. 获取逐字歌词
+  getNewLyrics(songId) {
+    return retryRequest(() => api.get(`/lyric/new?id=${songId}`))
   }
 }
 
