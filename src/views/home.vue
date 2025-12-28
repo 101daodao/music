@@ -2,7 +2,9 @@
   <div class="home-page">
     <!-- 页面头部 -->
     <div class="page-header">
-      <h1 class="page-title">🎵 欢迎来到网易云音乐</h1>
+      <h1 class="page-title">
+        <el-icon :size="28"><Headset /></el-icon> 欢迎来到网易云音乐
+      </h1>
       <p class="page-subtitle">发现好音乐，享受精彩生活</p>
     </div>
     
@@ -25,7 +27,9 @@
       <!-- 推荐音乐区域 -->
       <section class="recommend-section">
         <div class="section-header">
-          <h2 class="section-title">🔥 热门推荐</h2>
+          <h2 class="section-title">
+            <el-icon :size="20"><TrendCharts /></el-icon> 热门推荐
+          </h2>
           <button
             class="more-button"
             @click="toggleShowMore"
@@ -57,7 +61,9 @@
       
       <!-- 最新音乐区域 -->
       <section class="latest-section">
-        <h2 class="section-title">🆕 最新音乐</h2>
+        <h2 class="section-title">
+          <el-icon :size="20"><Clock /></el-icon> 最新音乐
+        </h2>
         <div class="music-list">
           <div 
             v-for="(item, index) in latestMusic" 
@@ -77,7 +83,9 @@
       
       <!-- 统计数据区域 -->
       <section class="stats-section">
-        <h2 class="section-title">📊 平台数据</h2>
+        <h2 class="section-title">
+          <el-icon :size="20"><DataAnalysis /></el-icon> 平台数据
+        </h2>
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-number">{{ stats.totalSongs }}</div>
@@ -103,6 +111,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { Headset, TrendCharts, Clock, DataAnalysis } from '@element-plus/icons-vue'
 import { usePlayerStore } from '../stores/player.js'
 import { musicService } from '../api/music.js'
 import Carousel from '../components/Carousel.vue'

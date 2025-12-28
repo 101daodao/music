@@ -59,17 +59,114 @@ html, body {
 }
 
 .app-header__left {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
 }
 
+/* 顶部导航链接 */
 .app-header__center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.header-nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast) var(--ease-out);
+  position: relative;
+}
+
+.header-nav__link .nav-text {
+  white-space: nowrap;
+}
+
+.header-nav__link:hover {
+  color: var(--color-primary);
+  background-color: var(--color-bg-tertiary);
+}
+
+.header-nav__link.active {
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  background: var(--gradient-primary);
+}
+
+.header-nav__link.active .el-icon,
+.header-nav__link.active .nav-text {
+  color: var(--color-text-inverse);
+}
+
+/* 搜索框区域 */
+.app-header__search {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  margin: 0 var(--spacing-lg);
+}
+
+.app-header__search .search-box {
+  max-width: 300px;
+}
+
+.header-nav__link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-fast) var(--ease-out);
+  position: relative;
+}
+
+.header-nav__link .nav-text {
+  white-space: nowrap;
+}
+
+.header-nav__link:hover {
+  color: var(--color-primary);
+  background-color: var(--color-bg-tertiary);
+}
+
+.header-nav__link.active {
+  color: var(--color-primary);
+  background-color: var(--color-primary);
+  background: var(--gradient-primary);
+}
+
+.header-nav__link.active .el-icon {
+  color: var(--color-text-inverse);
+}
+
+/* 搜索框区域 */
+.app-header__search {
   flex: 1;
   display: flex;
   justify-content: center;
   max-width: 400px;
-  margin: 0 var(--spacing-lg);
+}
+
+.app-header__search .search-box {
+  max-width: 100%;
 }
 
 .app-header__right {
@@ -92,11 +189,20 @@ html, body {
   border-right: 1px solid var(--color-border);
   flex-shrink: 0;
   overflow-y: auto;
-  transition: width var(--transition-normal) var(--ease-out);
+  transition: all var(--transition-normal) var(--ease-out);
 }
 
+/* 收缩时完全隐藏侧边栏 */
 .app-sidebar.collapsed {
-  width: var(--sidebar-collapsed-width);
+  width: 0;
+  border-right: none;
+  overflow: hidden;
+  opacity: 0;
+  padding: 0;
+}
+
+.app-sidebar.collapsed .app-sidebar__content {
+  display: none;
 }
 
 .app-sidebar__content {
@@ -148,6 +254,9 @@ html, body {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-menu__text {
@@ -156,11 +265,6 @@ html, body {
   white-space: nowrap;
   opacity: 1;
   transition: opacity var(--transition-normal) var(--ease-out);
-}
-
-.app-sidebar.collapsed .sidebar-menu__text {
-  opacity: 0;
-  visibility: hidden;
 }
 
 /* ========== 主内容区域 ========== */
@@ -200,6 +304,15 @@ html, body {
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Element Plus 图标在标题中的样式 */
+.page-title .el-icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .page-subtitle {
@@ -237,11 +350,14 @@ html, body {
   align-items: center;
   justify-content: center;
   color: var(--color-text-inverse);
-  font-weight: var(--font-weight-bold);
 }
 
-.app-sidebar.collapsed .app-logo__text {
-  display: none;
+/* Element Plus 图标通用样式优化 */
+.el-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
 }
 
 /* ========== 搜索框样式 ========== */

@@ -10,8 +10,12 @@
     
     <!-- 主体内容区域 -->
     <div class="app-main">
-      <!-- 侧边栏 -->
-      <aside class="app-sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileSidebarOpen }">
+      <!-- 侧边栏 - 收缩时完全隐藏 -->
+      <aside
+        v-if="!sidebarCollapsed || isMobile"
+        class="app-sidebar"
+        :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileSidebarOpen }"
+      >
         <nav class="app-sidebar__content">
           <ul class="sidebar-menu">
             <li class="sidebar-menu__item">
@@ -21,7 +25,7 @@
                 :class="{ active: $route.path === '/' }"
                 @click="closeMobileSidebar"
               >
-                <span class="sidebar-menu__icon">🏠</span>
+                <el-icon class="sidebar-menu__icon" :size="18"><HomeFilled /></el-icon>
                 <span class="sidebar-menu__text">首页</span>
               </router-link>
             </li>
@@ -32,8 +36,30 @@
                 :class="{ active: $route.path === '/rank' }"
                 @click="closeMobileSidebar"
               >
-                <span class="sidebar-menu__icon">🏆</span>
+                <el-icon class="sidebar-menu__icon" :size="18"><Trophy /></el-icon>
                 <span class="sidebar-menu__text">排行榜</span>
+              </router-link>
+            </li>
+            <li class="sidebar-menu__item">
+              <router-link
+                to="/my-playlists"
+                class="sidebar-menu__link"
+                :class="{ active: isActiveRoute('/playlist') }"
+                @click="closeMobileSidebar"
+              >
+                <el-icon class="sidebar-menu__icon" :size="18"><Folder /></el-icon>
+                <span class="sidebar-menu__text">我的歌单</span>
+              </router-link>
+            </li>
+            <li class="sidebar-menu__item">
+              <router-link
+                to="/mine"
+                class="sidebar-menu__link"
+                :class="{ active: $route.path === '/mine' }"
+                @click="closeMobileSidebar"
+              >
+                <el-icon class="sidebar-menu__icon" :size="18"><User /></el-icon>
+                <span class="sidebar-menu__text">个人中心</span>
               </router-link>
             </li>
           </ul>
@@ -47,8 +73,8 @@
     </div>
     
     <!-- 移动端遮罩层 -->
-    <div 
-      v-if="isMobile && mobileSidebarOpen" 
+    <div
+      v-if="isMobile && mobileSidebarOpen"
       class="mobile-overlay"
       @click="closeMobileSidebar"
     ></div>
@@ -59,6 +85,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
+import { HomeFilled, Trophy, User, Folder } from '@element-plus/icons-vue'
 import AppHeader from './head.vue'
 import AppMain from './main.vue'
 import { useThemeStore } from '../stores/theme.js'
@@ -93,6 +120,11 @@ const closeMobileSidebar = () => {
   if (isMobile.value) {
     mobileSidebarOpen.value = false
   }
+}
+
+// 判断路由是否激活
+const isActiveRoute = (path) => {
+  return route.path.startsWith(path)
 }
 
 

@@ -3,7 +3,9 @@
     <div class="not-found-content">
       <div class="error-visual">
         <div class="error-number">4</div>
-        <div class="error-icon">🎵</div>
+        <div class="error-icon">
+          <el-icon :size="64"><Headset /></el-icon>
+        </div>
         <div class="error-number">4</div>
       </div>
       
@@ -14,10 +16,10 @@
       
       <div class="error-actions">
         <button class="primary-btn" @click="goHome">
-          🏠 返回首页
+          <el-icon :size="16"><HomeFilled /></el-icon> 返回首页
         </button>
         <button class="secondary-btn" @click="goBack">
-          ← 返回上页
+          <el-icon :size="16"><ArrowLeft /></el-icon> 返回上页
         </button>
       </div>
       
@@ -25,19 +27,19 @@
         <h3>您可能在寻找：</h3>
         <div class="suggestion-links">
           <router-link to="/" class="suggestion-link">
-            🎵 首页 - 发现音乐
+            <el-icon :size="18"><Headset /></el-icon> 首页 - 发现音乐
           </router-link>
           <router-link to="/discover" class="suggestion-link">
-            🔍 发现音乐
+            <el-icon :size="18"><Search /></el-icon> 发现音乐
           </router-link>
           <router-link to="/mine" class="suggestion-link">
-            👤 个人中心
+            <el-icon :size="18"><User /></el-icon> 个人中心
           </router-link>
           <router-link to="/playlist" class="suggestion-link">
-            📚 我的歌单
+            <el-icon :size="18"><FolderOpened /></el-icon> 我的歌单
           </router-link>
           <router-link to="/rank" class="suggestion-link">
-            🏆 音乐排行榜
+            <el-icon :size="18"><Trophy /></el-icon> 音乐排行榜
           </router-link>
         </div>
       </div>
@@ -45,16 +47,25 @@
     
     <!-- 装饰元素 -->
     <div class="decoration-elements">
-      <div class="music-note note-1">♪</div>
-      <div class="music-note note-2">♫</div>
-      <div class="music-note note-3">♬</div>
-      <div class="music-note note-4">♪</div>
+      <div class="music-note note-1">
+        <el-icon :size="24"><Service /></el-icon>
+      </div>
+      <div class="music-note note-2">
+        <el-icon :size="32"><Headset /></el-icon>
+      </div>
+      <div class="music-note note-3">
+        <el-icon :size="28"><Microphone /></el-icon>
+      </div>
+      <div class="music-note note-4">
+        <el-icon :size="24"><Service /></el-icon>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { Headset, HomeFilled, ArrowLeft, Search, User, FolderOpened, Trophy, Service, Microphone } from '@element-plus/icons-vue'
 
 const router = useRouter()
 

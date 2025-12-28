@@ -1,8 +1,8 @@
 <template>
   <div class="search-box" :class="{ expanded: isExpanded || searchResults.length > 0 }">
     <div class="search-input-wrapper">
-      <input 
-        type="text" 
+      <input
+        type="text"
         class="search-input"
         v-model="searchQuery"
         @input="onSearchInput"
@@ -14,7 +14,7 @@
         placeholder="搜索歌曲、歌手、专辑"
       />
       <button class="search-button" @click="onSearch" :disabled="!searchQuery.trim()">
-        🔍
+        <el-icon :size="16"><Search /></el-icon>
       </button>
     </div>
     
@@ -66,6 +66,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Search } from '@element-plus/icons-vue'
 
 const props = defineProps({
   placeholder: {
@@ -305,7 +306,7 @@ defineExpose({
   height: 36px;
   padding: 0 var(--spacing-lg) 0 var(--spacing-lg);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-round);
+  border-radius: var(--radius-md);
   background-color: var(--color-bg-secondary);
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
@@ -333,9 +334,11 @@ defineExpose({
   color: var(--color-text-tertiary);
   cursor: pointer;
   padding: var(--spacing-sm);
-  border-radius: var(--radius-round);
+  border-radius: var(--radius-md);
   transition: all var(--transition-fast) var(--ease-out);
-  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-button:hover:not(:disabled) {
@@ -346,6 +349,12 @@ defineExpose({
 .search-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.search-button .el-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 搜索建议下拉框 */

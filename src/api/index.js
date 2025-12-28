@@ -21,8 +21,6 @@ const api = axios.create({
 // 请求拦截器
 api.interceptors.request.use(
   config => {
-    console.log('API请求:', config.method?.toUpperCase(), config.url)
-    
     // 添加时间戳参数避免缓存（特别是POST请求）
     if (!config.params) {
       config.params = {}
@@ -92,7 +90,6 @@ api.interceptors.response.use(
     if (data.cookie) {
       // 更新本地存储的cookie
       localStorage.setItem('netease-cookie', data.cookie)
-      console.log('Cookie已更新')
     }
     
     // 处理设备安全风险等特定错误
@@ -125,14 +122,12 @@ api.interceptors.response.use(
   }
 )
 
-// 重试机制
-const retryRequest = async (fn, retries = 3, delay = 1000) => {
+// 重试机制 - 减少重试次数和延迟时间以提高响应速度
+const retryRequest = async (fn, retries = 1, delay = 500) => {
   try {
     return await fn()
   } catch (error) {
     if (retries > 0) {
-      console.log(`请求失败，剩余重试次数: ${retries}, ${delay}ms后重试`)
-      await new Promise(resolve => setTimeout(resolve, delay))
       return retryRequest(fn, retries - 1, delay * 2)
     }
     throw error
@@ -149,6 +144,16 @@ export const musicApi = {
   // 2. 获取所有榜单内容摘要
   getToplistDetail() {
     return retryRequest(() => api.get('/toplist/detail'))
+  },
+
+  // 3. 获取所有榜单列表
+  getToplist() {
+    return retryRequest(() => api.get('/toplist'))
+  },
+
+  // 4. 获取歌单/榜单详情
+  getPlaylistDetail(id) {
+    return retryRequest(() => api.get(`/playlist/detail?id=${id}`))
   },
 
   // 3. 获取歌手榜

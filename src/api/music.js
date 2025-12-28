@@ -67,8 +67,78 @@ export const formatMusicData = {
   }
 }
 
+// 格式化播放量
+export const formatPlayCount = (count) => {
+  if (!count) return '0'
+  if (count >= 100000000) {
+    return (count / 100000000).toFixed(1) + '亿'
+  } else if (count >= 10000) {
+    return (count / 10000).toFixed(1) + '万'
+  }
+  return count.toString()
+}
+
 // 音乐数据服务
 export const musicService = {
+  // 获取所有榜单列表
+  async getToplist() {
+    try {
+      const response = await musicApi.getToplist()
+      return {
+        success: true,
+        data: response.list || [],
+        total: response.list?.length || 0
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      }
+    }
+  },
+
+  // 获取歌单/榜单详情
+  async getPlaylistDetail(id) {
+    try {
+      const response = await musicApi.getPlaylistDetail(id)
+      const playlist = response.playlist
+      
+      // 格式化歌曲列表
+      const songs = playlist?.tracks?.map(track => ({
+        id: track.id,
+        name: track.name,
+        artist: track.ar?.map(a => a.name).join(' / ') || track.artists?.map(a => a.name).join(' / ') || '未知歌手',
+        album: track.al?.name || track.album?.name || '未知专辑',
+        duration: track.dt || track.duration || 0,
+        coverUrl: track.al?.picUrl || track.album?.picUrl || '',
+        mv: track.mv || 0
+      })) || []
+
+      return {
+        success: true,
+        data: {
+          id: playlist?.id,
+          name: playlist?.name,
+          coverImgUrl: playlist?.coverImgUrl,
+          description: playlist?.description || '',
+          playCount: playlist?.playCount || 0,
+          trackCount: playlist?.trackCount || tracks?.length || 0,
+          creator: playlist?.creator?.nickname || '网易云音乐',
+          tags: playlist?.tags || [],
+          updateTime: playlist?.updateTime || 0,
+          songs: songs
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: null
+      }
+    }
+  },
+
   // 获取精品歌单
   async getHighQualityPlaylists(limit = 10) {
     try {

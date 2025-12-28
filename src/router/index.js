@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 // 路由组件懒加载
 const Home = () => import('../views/home.vue')
 const Rank = () => import('../views/rank.vue')
+const Playlist = () => import('../views/playlist.vue')
+const MyPlaylists = () => import('../views/my-playlists.vue')
 
 // 路由配置
 const routes = [
@@ -22,6 +24,26 @@ const routes = [
     component: Rank,
     meta: {
       title: '排行榜',
+      keepAlive: true,
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/playlist/:id',
+    name: 'Playlist',
+    component: Playlist,
+    meta: {
+      title: '歌单详情',
+      keepAlive: false,
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/my-playlists',
+    name: 'MyPlaylists',
+    component: MyPlaylists,
+    meta: {
+      title: '我的歌单',
       keepAlive: true,
       requiresAuth: false
     }

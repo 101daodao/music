@@ -1,44 +1,66 @@
 <template>
   <header class="app-header">
     <div class="app-header__content">
-      <!-- 左侧区域：Logo和菜单按钮 -->
+      <!-- 左侧区域：Logo -->
       <div class="app-header__left">
-        <!-- 移动端菜单按钮 -->
-        <button 
-          class="menu-toggle"
-          @click="$emit('toggleSidebar')"
-          v-if="showMobileMenu"
-        >
-          <span class="menu-icon">☰</span>
-        </button>
-        
-        <!-- 桌面端折叠按钮 -->
-        <button 
-          class="sidebar-toggle"
-          @click="$emit('toggleSidebar')"
-          v-if="!showMobileMenu"
-        >
-          <span class="menu-icon" :class="{ rotated: sidebarCollapsed }">◀</span>
-        </button>
-        
         <!-- Logo -->
         <router-link to="/" class="app-logo">
-          <div class="app-logo__icon">🎵</div>
+          <div class="app-logo__icon">
+            <el-icon :size="20"><Headset /></el-icon>
+          </div>
           <span class="app-logo__text">网易云音乐</span>
         </router-link>
       </div>
       
-      <!-- 中间区域：搜索框 -->
+      <!-- 中间区域：导航链接和搜索框 -->
       <div class="app-header__center">
+        <nav class="header-nav">
+          <router-link
+            to="/"
+            class="header-nav__link"
+            :class="{ active: isRouteActive('/') }"
+          >
+            <el-icon :size="18"><HomeFilled /></el-icon>
+            <span class="nav-text">首页</span>
+          </router-link>
+          <router-link
+            to="/rank"
+            class="header-nav__link"
+            :class="{ active: isRouteActive('/rank') }"
+          >
+            <el-icon :size="18"><Trophy /></el-icon>
+            <span class="nav-text">排行榜</span>
+          </router-link>
+          <router-link
+            to="/mine"
+            class="header-nav__link"
+            :class="{ active: isRouteActive('/mine') }"
+          >
+            <el-icon :size="18"><User /></el-icon>
+            <span class="nav-text">个人中心</span>
+          </router-link>
+        </nav>
+      </div>
+      
+      <!-- 中间右侧区域：搜索框 -->
+      <div class="app-header__search">
         <SearchBox @search="handleSearch" @select-song="handleSelectSong" />
       </div>
       
-      <!-- 右侧区域：用户信息和主题切换器 -->
+      <!-- 右侧区域：主题切换器、用户信息和折叠按钮 -->
       <div class="app-header__right">
+        <!-- 桌面端折叠按钮 -->
+        <button
+          class="sidebar-toggle"
+          @click="$emit('toggleSidebar')"
+          v-if="!showMobileMenu"
+        >
+          <el-icon :size="20" :class="{ rotated: sidebarCollapsed }"><Fold /></el-icon>
+        </button>
         <!-- 主题切换器 -->
         <div class="theme-switcher" @click="toggleThemeDropdown">
           <div class="theme-switcher__current">
-            <span class="theme-icon">🎨</span>
+            <el-icon :size="18"><Brush /></el-icon>
             <span class="theme-text">主题</span>
           </div>
           
@@ -100,9 +122,18 @@
             <img :src="authStore.avatar" alt="用户头像" class="user-avatar__img">
           </div>
           <div v-else class="user-avatar user-avatar--default">
-            U
+            <el-icon :size="16"><User /></el-icon>
           </div>
           <span class="user-name">{{ authStore.isLoggedIn ? authStore.nickname : '未登录' }}</span>
+          
+          <!-- 移动端菜单按钮 -->
+          <button
+            class="menu-toggle"
+            @click="$emit('toggleSidebar')"
+            v-if="showMobileMenu"
+          >
+            <el-icon :size="20"><Fold /></el-icon>
+          </button>
           
           <!-- 用户下拉菜单 -->
           <div v-if="authStore.isLoggedIn" class="user-dropdown" :class="{ show: showUserDropdown }" @click.stop>
@@ -116,7 +147,7 @@
             <div class="user-dropdown__divider"></div>
             <button class="user-dropdown__item" @click="handleLogout">
               <span>退出登录</span>
-              <span>🚪</span>
+              <el-icon :size="16"><SwitchButton /></el-icon>
             </button>
           </div>
         </div>
@@ -134,9 +165,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { Fold, Headset, Brush, SwitchButton, HomeFilled, Trophy, User } from '@element-plus/icons-vue'
 import SearchBox from '../components/SearchBox.vue'
 import LoginModal from '../components/LoginModal.vue'
 import { useAuthStore } from '../stores/auth.js'
+
+// 路由
+const route = useRoute()
 
 // Props
 const props = defineProps({
@@ -178,6 +214,11 @@ const currentThemeText = computed(() => {
   }
   return themeMap[props.theme] || '热情红'
 })
+
+// 判断路由是否激活
+const isRouteActive = (path) => {
+  return route.path === path
+}
 
 // 方法
 const handleSearch = (query) => {
@@ -285,7 +326,8 @@ onUnmounted(() => {
   transition: transform var(--transition-normal) var(--ease-out);
 }
 
-.menu-icon.rotated {
+.menu-icon.rotated,
+.sidebar-toggle .el-icon.rotated {
   transform: rotate(180deg);
 }
 
