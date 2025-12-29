@@ -1,17 +1,17 @@
 <template>
-  <div class="app-content__wrapper">
+  <div class="app-content__wrapper" ref="scrollContainer">
     <!-- 页面内容容器 -->
     <div class="content-container">
       <!-- 路由视图 - 动态显示不同页面内容 -->
       <router-view v-slot="{ Component, route }">
         <!-- 页面切换过渡动画 -->
-        <transition 
-          name="page-fade" 
+        <transition
+          name="page-fade"
           mode="out-in"
           appear
         >
-          <component 
-            :is="Component" 
+          <component
+            :is="Component"
             :key="route.path"
             class="page-component"
           />
@@ -24,12 +24,30 @@
       <div class="loading-spinner"></div>
       <div class="loading-text">加载中...</div>
     </div>
+    
+    <!-- 一键置顶组件 -->
+    <Teleport to="body">
+      <div class="back-to-top-wrapper">
+        <el-backtop
+          :visibility-height="500"
+          target=".app-content__wrapper"
+        >
+          <div class="back-to-top-content">
+            <el-icon :size="24">
+              <CaretTop />
+            </el-icon>
+          </div>
+        </el-backtop>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, Teleport } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElBacktop, ElIcon } from 'element-plus'
+import { CaretTop } from '@element-plus/icons-vue'
 
 // 响应式数据
 const route = useRoute()
@@ -170,7 +188,44 @@ watch(currentPageTitle, (newTitle) => {
 /* 内容容器样式增强 */
 .content-container {
   position: relative;
-  overflow: hidden;
+}
+
+/* 置顶按钮样式 */
+.back-to-top-content {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: var(--color-primary, #c20c0c);
+  color: #fff;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.back-to-top-content:hover {
+  background-color: var(--color-primary-light, #e04444);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* 置顶按钮外层包装，用于定位 */
+.back-to-top-wrapper {
+  position: fixed;
+  left: 50%;
+  bottom: 100px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.back-to-top-wrapper :deep(.el-backtop) {
+  pointer-events: auto;
+  transform: none !important;
+  margin: 0 !important;
+  right: auto !important;
+  bottom: auto !important;
 }
 
 /* 页面滚动优化 */

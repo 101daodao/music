@@ -107,7 +107,7 @@ export const musicService = {
       // 格式化歌曲列表
       const songs = playlist?.tracks?.map(track => ({
         id: track.id,
-        name: track.name,
+        title: track.name,
         artist: track.ar?.map(a => a.name).join(' / ') || track.artists?.map(a => a.name).join(' / ') || '未知歌手',
         album: track.al?.name || track.album?.name || '未知专辑',
         duration: track.dt || track.duration || 0,
@@ -250,11 +250,30 @@ export const musicService = {
   async getPersonalizedNewSongs(limit = 10) {
     try {
       const response = await musicApi.getPersonalizedNewSongs()
+      
+      // 调试日志
+      console.log('推荐新歌API响应:', response)
+      
+      const songs = (response.result || []).slice(0, limit).map(item => {
+        const song = item.song || item
+        return {
+          id: song.id || item.id,
+          title: song.name || item.name || '未知歌曲',
+          artist: song.artists?.map(a => a.name).join(' / ') || song.ar?.map(a => a.name).join(' / ') || '未知歌手',
+          album: song.album?.name || song.al?.name || '未知专辑',
+          cover: item.picUrl || song.album?.picUrl || song.al?.picUrl || '',
+          duration: song.duration || item.duration || 0
+        }
+      })
+      
+      console.log('处理后的推荐新歌数据:', songs)
+      
       return {
         success: true,
-        data: response.result?.slice(0, limit).map(item => formatMusicData.formatSong(item)) || []
+        data: songs
       }
     } catch (error) {
+      console.error('推荐新歌API错误:', error)
       return {
         success: false,
         error: error.message,
@@ -356,6 +375,95 @@ export const musicService = {
         success: false,
         error: error.message,
         data: []
+      }
+    }
+  },
+
+  // 搜索单曲
+  async searchSongs(keyword, limit = 20, offset = 0) {
+    try {
+      const response = await musicApi.searchSongs(keyword, limit, offset)
+      const songs = response.result?.songs || []
+      
+      return {
+        success: true,
+        data: songs.map(item => ({
+          id: item.id,
+          name: item.name,
+          artist: item.artists?.map(a => a.name).join(' / ') || '未知歌手',
+          album: item.album?.name || '未知专辑',
+          duration: item.duration || 0,
+          coverUrl: item.al?.picUrl || item.album?.picUrl || '',
+          cover: item.al?.picUrl || item.album?.picUrl || '',
+          type: 'song'
+        })),
+        total: response.result?.songCount || 0
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: [],
+        total: 0
+      }
+    }
+  },
+
+  // 搜索歌单
+  async searchPlaylists(keyword, limit = 20, offset = 0) {
+    try {
+      const response = await musicApi.searchPlaylists(keyword, limit, offset)
+      const playlists = response.result?.playlists || []
+      
+      return {
+        success: true,
+        data: playlists.map(item => ({
+          id: item.id,
+          name: item.name,
+          cover: item.coverImgUrl || '',
+          creator: item.creator?.nickname || '未知',
+          trackCount: item.trackCount || 0,
+          playCount: item.playCount || 0,
+          description: item.description || '',
+          type: 'playlist'
+        })),
+        total: response.result?.playlistCount || 0
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: [],
+        total: 0
+      }
+    }
+  },
+
+  // 综合搜索（同时搜索歌曲和歌单）
+  async searchAll(keyword, limit = 10) {
+    try {
+      const [songsResult, playlistsResult] = await Promise.all([
+        this.searchSongs(keyword, limit),
+        this.searchPlaylists(keyword, limit)
+      ])
+      
+      return {
+        success: true,
+        data: {
+          songs: songsResult.data,
+          playlists: playlistsResult.data
+        },
+        total: {
+          songs: songsResult.total,
+          playlists: playlistsResult.total
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        data: { songs: [], playlists: [] },
+        total: { songs: 0, playlists: 0 }
       }
     }
   },
@@ -569,7 +677,7 @@ export const musicService = {
         success: true,
         data: {
           id: song.id,
-          name: song.name,
+          title: song.name,
           artist: song.ar?.[0]?.name || '未知歌手',
           album: song.al?.name || '未知专辑',
           picUrl: song.al?.picUrl || '',

@@ -26,6 +26,9 @@ export const usePlayerStore = defineStore('player', () => {
 
   // 歌词弹窗状态
   const showLyricsModal = ref(false)
+  
+  // 播放列表弹窗状态
+  const showPlaylistModal = ref(false)
 
   // 音频元素引用
   const audioElement = ref(null)
@@ -207,6 +210,9 @@ export const usePlayerStore = defineStore('player', () => {
     const song = playlist.value[index]
     currentIndex.value = index
     
+    // 立即更新当前歌曲，确保播放器显示正确
+    currentSong.value = song
+    
     // 保存当前播放状态
     const wasPlaying = isPlaying.value
     
@@ -221,30 +227,29 @@ export const usePlayerStore = defineStore('player', () => {
       // 获取歌曲详情以更新封面信息
       try {
         const detailResult = await musicService.getSongDetail(song.id)
-        if (detailResult.success && detailResult.data?.picUrl) {
-          // 更新歌曲的封面URL
-          playlist.value[index] = {
+        if (detailResult.success) {
+          // 更新歌曲对象
+          const updatedSong = {
             ...song,
-            cover: detailResult.data.picUrl
+            cover: detailResult.data?.picUrl || song.cover
           }
-          currentSong.value = playlist.value[index]
-          console.log('歌曲封面已更新:', detailResult.data.picUrl)
+          // 直接更新播放列表中的歌曲和当前歌曲
+          playlist.value[index] = updatedSong
+          currentSong.value = updatedSong
+        } else {
+          console.warn('获取歌曲详情失败，使用原有数据')
         }
       } catch (detailError) {
         console.warn('获取歌曲详情失败，使用原有数据:', detailError)
-        currentSong.value = song
       }
       
       // 获取歌曲播放URL
-      console.log('正在获取歌曲播放URL:', song.id)
       const urlResult = await musicService.getSongUrl(song.id)
       
       let audioUrl = ''
       if (urlResult.success && urlResult.data?.url) {
         audioUrl = audioUtils.fixAudioUrl(urlResult.data.url)
-        console.log('歌曲URL设置成功:', audioUrl)
       } else {
-        console.warn('获取歌曲URL失败:', urlResult.error || '未知错误')
         // 使用备用音频
         const fallbackAudio = audioUtils.getFallbackAudio()
         audioUrl = fallbackAudio.url
@@ -265,9 +270,6 @@ export const usePlayerStore = defineStore('player', () => {
         audioElement.value.load()
       }
     } catch (error) {
-      console.error('加载歌曲时发生错误:', error)
-      // 确保设置currentSong，即使出错
-      currentSong.value = song
       // 使用备用音频
       const fallbackAudio = audioUtils.getFallbackAudio()
       if (audioElement.value) {
@@ -354,24 +356,20 @@ export const usePlayerStore = defineStore('player', () => {
       
       if (newLyricsResult.success && newLyricsResult.data.lyrics.length > 0) {
         currentLyrics.value = newLyricsResult.data.lyrics
-        console.log('加载逐字歌词成功:', newLyricsResult.data.lyrics.length, '行')
       } else {
         // 如果逐字歌词不可用，尝试获取普通歌词
         const lyricsResult = await musicService.getLyrics(songId)
         
         if (lyricsResult.success && lyricsResult.data.lyrics.length > 0) {
           currentLyrics.value = lyricsResult.data.lyrics
-          console.log('加载普通歌词成功:', lyricsResult.data.lyrics.length, '行')
         } else {
           // 如果都没有，显示暂无歌词
           currentLyrics.value = [{ time: 0, text: '暂无歌词' }]
-          console.warn('该歌曲暂无可用歌词')
         }
       }
       
       currentLyricIndex.value = 0
     } catch (error) {
-      console.error('加载歌词失败:', error)
       currentLyrics.value = [{ time: 0, text: '加载歌词失败' }]
     }
   }
@@ -408,6 +406,19 @@ export const usePlayerStore = defineStore('player', () => {
   const hideLyricsModal = () => {
     showLyricsModal.value = false
   }
+  
+  // 播放列表弹窗控制方法
+  const togglePlaylistModal = () => {
+    showPlaylistModal.value = !showPlaylistModal.value
+  }
+  
+  const showPlaylistModalState = () => {
+    showPlaylistModal.value = true
+  }
+  
+  const hidePlaylistModal = () => {
+    showPlaylistModal.value = false
+  }
 
   // 搜索功能
   const searchSongs = async (query, limit = 20) => {
@@ -436,6 +447,7 @@ export const usePlayerStore = defineStore('player', () => {
     currentLyricIndex,
     lyricsOffset,
     showLyricsModal,
+    showPlaylistModal,
     audioElement,
     
     // 计算属性
@@ -469,6 +481,9 @@ export const usePlayerStore = defineStore('player', () => {
     toggleLyricsModal,
     showLyricsModalState,
     hideLyricsModal,
+    togglePlaylistModal,
+    showPlaylistModalState,
+    hidePlaylistModal,
     
     // 音频事件
     onTimeUpdate,

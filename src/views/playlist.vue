@@ -121,17 +121,17 @@ const formatDuration = (ms) => {
 const playSong = async (index) => {
   if (!playlist.value || !playlist.value.songs.length) return
   
-  const songs = playlist.value.songs.map(song => ({
+  const songs = playlist.value.songs.map((song, idx) => ({
     id: song.id,
-    name: song.name,
+    title: song.name || song.title || '未知歌曲',
     artist: song.artist,
     album: song.album,
-    cover: song.coverUrl,
+    cover: song.coverUrl || song.cover,
     duration: song.duration
   }))
   
-  // 更新播放列表
-  playerStore.playlist = songs
+  // 使用 store 的方法更新播放列表
+  playerStore.setPlaylist(songs)
   
   // 播放指定索引的歌曲
   await playerStore.loadSong(index)

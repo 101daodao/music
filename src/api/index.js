@@ -7,10 +7,6 @@ const api = axios.create({
   withCredentials: true, // 支持跨域携带cookie
   headers: {
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    // 添加User-Agent模拟真实浏览器
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
-    // 添加Referer
-    'Referer': 'https://music.163.com/',
     // 添加Accept
     'Accept': '*/*',
     // 添加Accept-Language
@@ -195,6 +191,22 @@ export const musicApi = {
   // 10. 搜索音乐
   searchMusic(keyword, limit = 20) {
     return retryRequest(() => api.get(`/search?keywords=${encodeURIComponent(keyword)}&limit=${limit}`))
+  },
+
+  // 多类型搜索
+  // type: 1-单曲, 10-专辑, 100-歌手, 1000-歌单, 1002-用户, 1004-MV, 1006-歌词, 1009-电台, 1014-视频
+  search(keyword, type = 1, limit = 20, offset = 0) {
+    return retryRequest(() => api.get(`/search?keywords=${encodeURIComponent(keyword)}&type=${type}&limit=${limit}&offset=${offset}`))
+  },
+
+  // 搜索单曲
+  searchSongs(keyword, limit = 20, offset = 0) {
+    return retryRequest(() => api.get(`/search?keywords=${encodeURIComponent(keyword)}&type=1&limit=${limit}&offset=${offset}`))
+  },
+
+  // 搜案歌单
+  searchPlaylists(keyword, limit = 20, offset = 0) {
+    return retryRequest(() => api.get(`/search?keywords=${encodeURIComponent(keyword)}&type=1000&limit=${limit}&offset=${offset}`))
   },
 
   // 11. 获取歌词

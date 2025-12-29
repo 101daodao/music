@@ -157,6 +157,10 @@
 
 /* ========== 深色主题 ========== */
 .theme-dark {
+  --color-primary: #ff4d4f;
+  --color-primary-light: #ff7875;
+  --color-primary-dark: #d9363e;
+  
   --color-bg-primary: #141414;
   --color-bg-secondary: #1f1f1f;
   --color-bg-tertiary: #262626;
@@ -173,6 +177,9 @@
   
   --color-secondary: #595959;
   --color-accent: #ffffff;
+  
+  --gradient-primary: linear-gradient(135deg, #ff4d4f, #ff7875);
+  --gradient-secondary: linear-gradient(135deg, #d9363e, #cf1322);
   
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 1px 6px rgba(0, 0, 0, 0.5);

@@ -17,7 +17,7 @@
       </div>
       
       <!-- 播放控制 -->
-      <div class="player-controls">
+      <div class="player-controls-left">
         <!-- 上一首 -->
         <button class="control-btn" @click.stop="prevSong" :disabled="!canPrev">
           <el-icon><DArrowLeft /></el-icon>
@@ -32,7 +32,10 @@
         <button class="control-btn" @click.stop="nextSong" :disabled="!canNext">
           <el-icon><DArrowRight /></el-icon>
         </button>
-        
+      </div>
+      
+      <!-- 右侧控制 -->
+      <div class="player-controls-right">
         <!-- 播放模式 -->
         <button class="control-btn mode-btn" @click.stop="togglePlayMode" :title="playModeTitle">
           <el-icon>
@@ -42,13 +45,17 @@
           </el-icon>
         </button>
         
+        <!-- 歌单列表 -->
+        <button class="control-btn" @click.stop="togglePlaylistModal" title="歌单列表">
+          <el-icon><Service /></el-icon>
+        </button>
+        
         <!-- 音量控制 -->
         <div class="volume-control">
           <button class="control-btn" @click.stop="toggleMute">
             <el-icon>
-              <Mute v-if="isMuted || volume === 0" />
-              <Microphone v-else-if="volume < 30" />
-              <Microphone v-else />
+              <MuteNotification v-if="isMuted || volume === 0" />
+              <Bell v-else />
             </el-icon>
           </button>
           <div class="volume-slider-container">
@@ -81,6 +88,11 @@
       <LyricsModal />
     </Teleport>
     
+    <!-- 播放列表弹窗 -->
+    <Teleport to="body">
+      <PlaylistModal />
+    </Teleport>
+    
     <!-- 音频元素 -->
     <audio
       ref="audioPlayer"
@@ -98,6 +110,7 @@ import { storeToRefs } from 'pinia'
 import { usePlayerStore } from '../stores/player.js'
 import { useThemeStore } from '../stores/theme.js'
 import LyricsModal from './LyricsModal.vue'
+import PlaylistModal from './PlaylistModal.vue'
 import {
   VideoPlay,
   VideoPause,
@@ -106,8 +119,9 @@ import {
   RefreshRight,
   Sort,
   List,
-  Microphone,
-  Mute
+  Bell,
+  MuteNotification,
+  Service
 } from '@element-plus/icons-vue'
 
 const playerStore = usePlayerStore()
@@ -137,6 +151,7 @@ const {
   currentLyricIndex,
   lyricsOffset,
   showLyricsModal,
+  showPlaylistModal,
   progressPercentage,
   playModeIcon,
   playModeTitle,
@@ -166,6 +181,7 @@ const {
   updateCurrentLyric,
   toggleLyricsModal,
   hideLyricsModal,
+  togglePlaylistModal,
   formatTime,
   searchSongs,
   onTimeUpdate,
@@ -256,7 +272,7 @@ defineExpose({
 }
 
 /* 深色主题适配 */
-.music-player.dark {
+.music-player.theme-dark {
   background: rgba(24, 24, 28, 0.95);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -367,148 +383,195 @@ defineExpose({
   color: var(--color-primary);
 }
 
-/* 播放控制 */
-.player-controls {
+/* 播放控制 - 左侧（播放按钮） */
+.player-controls-left {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
   flex: 1;
   justify-content: center;
 }
 
+/* 播放控制 - 右侧（其他按钮） */
+.player-controls-right {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-right: var(--spacing-lg);
+}
+
+/* 普通控制按钮 */
 .control-btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--color-text-secondary);
   cursor: pointer;
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-round);
+  padding: 8px 12px;
+  border-radius: 8px;
   transition: all var(--transition-fast) var(--ease-out);
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  backdrop-filter: blur(10px);
   position: relative;
   overflow: hidden;
-}
-
-.control-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-  background: rgba(var(--color-primary-rgb), 0.1);
-  border-radius: 50%;
-  transition: all var(--transition-normal) var(--ease-out);
 }
 
 .control-btn .el-icon {
-  font-size: 18px;
+  font-size: 20px;
   transition: all var(--transition-fast) var(--ease-out);
   position: relative;
   z-index: 1;
 }
 
+/* 按钮悬停效果 */
 .control-btn:hover {
-  background: rgba(var(--color-primary-rgb), 0.05);
+  background: rgba(var(--color-primary-rgb), 0.15);
+  border-color: rgba(var(--color-primary-rgb), 0.4);
   color: var(--color-primary);
-  transform: translateY(-1px);
-}
-
-.control-btn:hover::before {
-  width: 100%;
-  height: 100%;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .control-btn:hover .el-icon {
-  transform: scale(1.1);
-  filter: drop-shadow(0 2px 4px rgba(var(--color-primary-rgb), 0.2));
+  transform: scale(1.15);
 }
 
+/* 按钮按下效果 */
+.control-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 6px rgba(var(--color-primary-rgb), 0.15);
+}
+
+.control-btn:active .el-icon {
+  transform: scale(1.05);
+}
+
+/* 禁用状态 */
 .control-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
+  transform: none;
 }
 
 .control-btn:disabled:hover {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
   color: var(--color-text-secondary);
-  transform: none;
-}
-
-.control-btn:disabled:hover::before {
-  width: 0;
-  height: 0;
+  box-shadow: none;
 }
 
 .control-btn:disabled:hover .el-icon {
-  transform: none;
-  filter: none;
+  transform: scale(1);
 }
 
+/* 播放/暂停按钮 */
 .play-pause-btn {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   color: white;
-  width: 38px;
-  height: 38px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all var(--transition-fast) var(--ease-out);
-  box-shadow: 0 3px 10px rgba(var(--color-primary-rgb), 0.3);
+  box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
 }
 
-.play-pause-btn::before {
+.play-pause-btn::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transition: left var(--transition-slow) var(--ease-out);
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity var(--transition-fast) var(--ease-out);
 }
 
 .play-pause-btn .el-icon {
-  font-size: 18px;
+  font-size: 22px;
   transition: all var(--transition-fast) var(--ease-out);
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-}
-
-.play-pause-btn:hover {
-  background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
-  transform: scale(1.05) translateY(-2px);
-  box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
-}
-
-.play-pause-btn:hover::before {
-  left: 100%;
-}
-
-.play-pause-btn:hover .el-icon {
-  transform: scale(1.1);
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
+.play-pause-btn:hover {
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.5);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.play-pause-btn:hover::after {
+  opacity: 1;
+}
+
+.play-pause-btn:hover .el-icon {
+  transform: scale(1.2);
+}
+
 .play-pause-btn:active {
-  transform: scale(0.98);
-  box-shadow: 0 2px 6px rgba(var(--color-primary-rgb), 0.3);
+  transform: scale(1.05);
+  box-shadow: 0 3px 12px rgba(var(--color-primary-rgb), 0.4);
 }
 
 .play-pause-btn:active .el-icon {
-  transform: scale(0.95);
+  transform: scale(1.1);
+}
+
+/* 模式按钮 */
+.mode-btn {
+  position: relative;
+}
+
+.mode-btn.active::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+/* ========== 深色主题适配 ========== */
+.music-player.theme-dark .control-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--color-text-secondary);
+}
+
+.music-player.theme-dark .control-btn:hover {
+  background: rgba(var(--color-primary-rgb), 0.2);
+  border-color: rgba(var(--color-primary-rgb), 0.5);
+  color: var(--color-primary-light);
+  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.music-player.theme-dark .play-pause-btn {
+  background: linear-gradient(135deg, var(--color-primary) 0%, #a80808 100%);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.music-player.theme-dark .play-pause-btn:hover {
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.6);
+}
+
+.music-player.theme-dark .mode-btn.active::after {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
 .mode-btn {
@@ -649,29 +712,22 @@ defineExpose({
 }
 
 /* 深色主题适配 */
-.dark .control-btn {
-  color: var(--color-text-secondary);
-}
-
-.dark .control-btn:hover {
+.music-player.theme-dark .volume-slider {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.dark .volume-slider {
+.music-player.theme-dark .progress-bar {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.dark .progress-bar {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.dark .progress-buffer {
+.music-player.theme-dark .progress-buffer {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.time-text {
-  color: var(--color-text-secondary);
+.music-player.theme-dark .progress-thumb {
+  border-color: rgba(255, 255, 255, 0.3);
 }
+
 
 /* 响应式设计 */
 @media (max-width: 768px) {

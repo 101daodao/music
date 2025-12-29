@@ -1,5 +1,5 @@
 <template>
-  <div class="search-box" :class="{ expanded: isExpanded || searchResults.length > 0 }">
+  <div class="search-box" :class="{ expanded: isExpanded || showSuggestions }">
     <div class="search-input-wrapper">
       <input
         type="text"
@@ -11,7 +11,7 @@
         @keydown.down="highlightNext"
         @keydown.up="highlightPrev"
         @keydown.escape="closeSearch"
-        placeholder="搜索歌曲、歌手、专辑"
+        placeholder="搜索歌曲、歌手、专辑、歌单"
       />
       <button class="search-button" @click="onSearch" :disabled="!searchQuery.trim()">
         <el-icon :size="16"><Search /></el-icon>
@@ -20,7 +20,7 @@
     
     <!-- 搜索建议下拉框 -->
     <div 
-      v-if="showSuggestions && (searchResults.length > 0 || isSearching)" 
+      v-if="showSuggestions" 
       class="search-suggestions"
     >
       <!-- 搜索状态 -->
@@ -29,32 +29,85 @@
         <span>搜索中...</span>
       </div>
       
+      <!-- 搜索示例 -->
+      <div v-else-if="searchResults.songs.length === 0 && searchResults.playlists.length === 0 && searchQuery.trim() === ''" class="search-examples">
+        <div class="examples-title">热门搜索</div>
+        <div class="examples-tags">
+          <span 
+            v-for="(example, index) in searchExamples" 
+            :key="index"
+            class="example-tag"
+            @click="searchExample(example.keyword)"
+          >
+            {{ example.tag }}
+          </span>
+        </div>
+      </div>
+      
       <!-- 搜索结果 -->
-      <div v-else-if="searchResults.length > 0" class="search-results">
-        <div 
-          v-for="(result, index) in searchResults" 
-          :key="result.id"
-          class="search-result-item"
-          :class="{ highlighted: index === highlightedIndex }"
-          @click="selectResult(result)"
-          @mouseenter="highlightedIndex = index"
-        >
-          <div class="result-cover">
-            <img :src="result.cover || defaultCover" :alt="result.title" />
+      <div v-else-if="hasResults" class="search-results">
+        <!-- 歌曲结果 -->
+        <div v-if="searchResults.songs.length > 0" class="result-section">
+          <div class="result-section-title">
+            <span>🎵 歌曲</span>
+            <span class="result-count">{{ searchResults.songs.length }}</span>
           </div>
-          <div class="result-info">
-            <h4 class="result-title">{{ highlightMatch(result.title) }}</h4>
-            <p class="result-artist">{{ highlightMatch(result.artist) }}</p>
-            <p class="result-album">{{ result.album || '未知专辑' }}</p>
+          <div 
+            v-for="(song, index) in searchResults.songs" 
+            :key="song.id"
+            class="search-result-item"
+            :class="{ highlighted: highlightedIndex === index }"
+            @click="playSong(song)"
+            @mouseenter="highlightedIndex = index"
+          >
+            <div class="result-cover">
+              <img :src="song.cover || defaultCover" :alt="song.name" />
+              <div class="play-overlay">
+                <span class="play-icon">▶</span>
+              </div>
+            </div>
+            <div class="result-info">
+              <h4 class="result-title">{{ highlightMatch(song.name) }}</h4>
+              <p class="result-artist">{{ highlightMatch(song.artist) }}</p>
+              <p class="result-album">{{ song.album }}</p>
+            </div>
+            <div class="result-duration">
+              {{ formatDuration(song.duration) }}
+            </div>
           </div>
-          <div class="result-duration" v-if="result.duration">
-            {{ result.duration }}
+        </div>
+        
+        <!-- 歌单结果 -->
+        <div v-if="searchResults.playlists.length > 0" class="result-section">
+          <div class="result-section-title">
+            <span>📋 歌单</span>
+            <span class="result-count">{{ searchResults.playlists.length }}</span>
+          </div>
+          <div 
+            v-for="(playlist, index) in searchResults.playlists" 
+            :key="playlist.id"
+            class="search-result-item playlist-item"
+            :class="{ highlighted: highlightedIndex === searchResults.songs.length + index }"
+            @click="goToPlaylist(playlist)"
+            @mouseenter="highlightedIndex = searchResults.songs.length + index"
+          >
+            <div class="result-cover">
+              <img :src="playlist.cover || defaultCover" :alt="playlist.name" />
+            </div>
+            <div class="result-info">
+              <h4 class="result-title">{{ highlightMatch(playlist.name) }}</h4>
+              <p class="result-artist">{{ highlightMatch(playlist.creator) }}</p>
+              <p class="result-album">{{ playlist.trackCount }}首 • {{ formatPlayCount(playlist.playCount) }}</p>
+            </div>
+            <div class="result-arrow">
+              <span>→</span>
+            </div>
           </div>
         </div>
       </div>
       
       <!-- 无结果 -->
-      <div v-else-if="searchQuery.trim()" class="no-results">
+      <div v-else-if="!isSearching && searchQuery.trim() && !hasResults" class="no-results">
         <span>🔍</span>
         <p>未找到相关结果</p>
         <small>尝试使用其他关键词</small>
@@ -66,12 +119,14 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { usePlayerStore } from '../stores/player.js'
+import { musicService } from '../api/music.js'
 import { Search } from '@element-plus/icons-vue'
 
 const props = defineProps({
   placeholder: {
     type: String,
-    default: '搜索歌曲、歌手、专辑'
+    default: '搜索歌曲、歌手、专辑、歌单'
   }
 })
 
@@ -79,8 +134,9 @@ const emit = defineEmits(['search', 'select-song'])
 
 // 响应式数据
 const router = useRouter()
+const playerStore = usePlayerStore()
 const searchQuery = ref('')
-const searchResults = ref([])
+const searchResults = ref({ songs: [], playlists: [] })
 const isSearching = ref(false)
 const isExpanded = ref(false)
 const showSuggestions = ref(false)
@@ -88,6 +144,14 @@ const highlightedIndex = ref(-1)
 
 // 默认封面
 const defaultCover = 'https://picsum.photos/48/48?default=search'
+
+// 搜索示例
+const searchExamples = [
+  { tag: '周杰伦', keyword: '周杰伦' },
+  { tag: '告白气球', keyword: '告白气球' },
+  { tag: '流行金曲', keyword: '流行' },
+  { tag: '古风歌单', keyword: '古风' }
+]
 
 // 防抖计时器
 let searchTimer = null
@@ -97,10 +161,33 @@ const hasValidQuery = computed(() => {
   return searchQuery.value.trim().length > 0
 })
 
+const hasResults = computed(() => {
+  return searchResults.value.songs.length > 0 || searchResults.value.playlists.length > 0
+})
+
+// 格式化时长
+const formatDuration = (duration) => {
+  if (!duration) return '--:--'
+  const minutes = Math.floor(duration / 60000)
+  const seconds = Math.floor((duration % 60000) / 1000)
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+// 格式化播放量
+const formatPlayCount = (count) => {
+  if (!count) return '0'
+  if (count >= 100000000) {
+    return (count / 100000000).toFixed(1) + '亿'
+  } else if (count >= 10000) {
+    return (count / 10000).toFixed(1) + '万'
+  }
+  return count.toString()
+}
+
 // 搜索方法
 const performSearch = async (query) => {
   if (!query.trim()) {
-    searchResults.value = []
+    searchResults.value = { songs: [], playlists: [] }
     return
   }
   
@@ -108,48 +195,57 @@ const performSearch = async (query) => {
   showSuggestions.value = true
   
   try {
-    // 模拟API调用延迟
-    await new Promise(resolve => setTimeout(resolve, 300))
+    const result = await musicService.searchAll(query, 5)
     
-    // 这里应该调用真实API，暂时使用模拟数据
-    const mockResults = [
-      {
-        id: 1,
-        title: '夜曲',
-        artist: '周杰伦',
-        album: '十一月的萧邦',
-        cover: 'https://picsum.photos/48/48?search1',
-        duration: '3:46'
-      },
-      {
-        id: 2,
-        title: '晴天',
-        artist: '周杰伦',
-        album: '叶惠美',
-        cover: 'https://picsum.photos/48/48?search2',
-        duration: '4:29'
-      },
-      {
-        id: 3,
-        title: '告白气球',
-        artist: '周杰伦',
-        album: '周杰伦的床边故事',
-        cover: 'https://picsum.photos/48/48?search3',
-        duration: '3:35'
-      }
-    ].filter(item => 
-      item.title.toLowerCase().includes(query.toLowerCase()) ||
-      item.artist.toLowerCase().includes(query.toLowerCase()) ||
-      item.album.toLowerCase().includes(query.toLowerCase())
-    ).slice(0, 10)
-    
-    searchResults.value = mockResults
+    if (result.success) {
+      searchResults.value = result.data
+    } else {
+      console.error('搜索失败:', result.error)
+      searchResults.value = { songs: [], playlists: [] }
+    }
   } catch (error) {
     console.error('搜索失败:', error)
-    searchResults.value = []
+    searchResults.value = { songs: [], playlists: [] }
   } finally {
     isSearching.value = false
   }
+}
+
+// 搜索示例
+const searchExample = (keyword) => {
+  searchQuery.value = keyword
+  performSearch(keyword)
+}
+
+// 播放歌曲
+const playSong = async (song) => {
+  try {
+    // 转换数据格式以匹配播放器期望的格式
+    const formattedSong = {
+      id: song.id,
+      title: song.name || song.title,
+      artist: song.artist,
+      album: song.album,
+      duration: song.duration,
+      cover: song.coverUrl || song.cover,
+      url: song.url || ''
+    }
+    
+    // 调用player store的playSong方法，该方法会自动添加到播放列表并播放
+    await playerStore.playSong(formattedSong)
+    closeSearch()
+  } catch (error) {
+    console.error('播放失败:', error)
+  }
+}
+
+// 跳转歌单
+const goToPlaylist = (playlist) => {
+  router.push({
+    name: 'Playlist',
+    params: { id: playlist.id }
+  })
+  closeSearch()
 }
 
 // 事件处理
@@ -169,54 +265,42 @@ const onSearchInput = () => {
 
 const onFocus = () => {
   isExpanded.value = true
-  if (hasValidQuery.value) {
+  if (hasValidQuery.value || searchResults.value.songs.length > 0 || searchResults.value.playlists.length > 0) {
     showSuggestions.value = true
+  } else {
+    showSuggestions.value = true // 显示搜索示例
   }
 }
 
 const onSearch = () => {
   if (hasValidQuery.value) {
     emit('search', searchQuery.value)
-    closeSearch()
-    
-    // 可以跳转到搜索结果页面
-    router.push({
-      name: 'SearchResults',
-      query: { q: searchQuery.value }
-    })
-  }
-}
-
-const selectResult = (result) => {
-  emit('select-song', result)
-  closeSearch()
-  
-  // 播放选中的歌曲
-  const musicPlayer = document.querySelector('music-player')
-  if (musicPlayer) {
-    musicPlayer.playSong(result)
+    // 搜索完成后保持下拉框显示，让用户选择结果
+    performSearch(searchQuery.value)
   }
 }
 
 const closeSearch = () => {
   showSuggestions.value = false
   isExpanded.value = false
-  searchResults.value = []
+  // 不清空搜索结果和查询，保留用户输入
   highlightedIndex.value = -1
 }
 
 // 键盘导航
 const highlightNext = () => {
-  if (searchResults.value.length > 0) {
-    highlightedIndex.value = (highlightedIndex.value + 1) % searchResults.value.length
+  const totalResults = searchResults.value.songs.length + searchResults.value.playlists.length
+  if (totalResults > 0) {
+    highlightedIndex.value = (highlightedIndex.value + 1) % totalResults
     scrollToHighlighted()
   }
 }
 
 const highlightPrev = () => {
-  if (searchResults.value.length > 0) {
+  const totalResults = searchResults.value.songs.length + searchResults.value.playlists.length
+  if (totalResults > 0) {
     highlightedIndex.value = highlightedIndex.value <= 0 
-      ? searchResults.value.length - 1 
+      ? totalResults - 1 
       : highlightedIndex.value - 1
     scrollToHighlighted()
   }
@@ -236,7 +320,7 @@ const scrollToHighlighted = () => {
 
 // 高亮匹配文本
 const highlightMatch = (text) => {
-  if (!searchQuery.value.trim()) return text
+  if (!searchQuery.value.trim() || !text) return text
   
   const regex = new RegExp(`(${searchQuery.value.trim()})`, 'gi')
   return text.replace(regex, '<mark>$1</mark>')
@@ -252,7 +336,7 @@ const handleClickOutside = (event) => {
 
 // 监听搜索结果变化
 watch(searchResults, () => {
-  if (searchResults.value.length > 0) {
+  if (hasResults.value) {
     showSuggestions.value = true
   }
 })
@@ -277,7 +361,7 @@ defineExpose({
   },
   clear: () => {
     searchQuery.value = ''
-    searchResults.value = []
+    searchResults.value = { songs: [], playlists: [] }
     closeSearch()
   }
 })
@@ -367,7 +451,7 @@ defineExpose({
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
   z-index: var(--z-index-dropdown);
   margin-top: var(--spacing-xs);
@@ -398,10 +482,72 @@ defineExpose({
   100% { transform: rotate(360deg); }
 }
 
+/* 搜索示例 */
+.search-examples {
+  padding: var(--spacing-lg);
+}
+
+.examples-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+  font-weight: var(--font-weight-medium);
+}
+
+.examples-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.example-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--ease-out);
+  border: 1px solid transparent;
+}
+
+.example-tag:hover {
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+  color: var(--color-primary);
+}
+
 /* 搜索结果 */
 .search-results {
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
+}
+
+.result-section {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.result-section:last-child {
+  border-bottom: none;
+}
+
+.result-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--color-bg-secondary);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.result-count {
+  color: var(--color-text-tertiary);
 }
 
 .search-result-item {
@@ -429,12 +575,36 @@ defineExpose({
   border-radius: var(--radius-sm);
   overflow: hidden;
   flex-shrink: 0;
+  position: relative;
 }
 
 .result-cover img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-fast) var(--ease-out);
+}
+
+.search-result-item:hover .play-overlay {
+  opacity: 1;
+}
+
+.play-icon {
+  color: white;
+  font-size: 18px;
 }
 
 .result-info {
@@ -473,6 +643,17 @@ defineExpose({
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
+}
+
+.result-arrow {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  transition: opacity var(--transition-fast) var(--ease-out);
+}
+
+.playlist-item:hover .result-arrow {
+  opacity: 1;
 }
 
 /* 高亮匹配文本 */
@@ -521,7 +702,7 @@ defineExpose({
   }
   
   .search-suggestions {
-    max-height: 300px;
+    max-height: 400px;
   }
 }
 

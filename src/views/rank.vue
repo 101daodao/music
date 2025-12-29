@@ -38,61 +38,255 @@
     
     <!-- 页面内容 -->
     <div v-else class="page-content">
-      <div class="ranks-grid-full">
-        <el-card
-          v-for="(rank, index) in allRanks"
-          :key="rank.id"
-          class="rank-card"
-          :body-style="{ padding: '0' }"
-          shadow="hover"
-          @click="goToPlaylist(rank.id)"
-        >
-          <div class="card-cover">
-            <el-image
-              :src="rank.coverImgUrl"
-              :alt="rank.name"
-              fit="cover"
-              :lazy="true"
-              class="cover-image"
-            >
-              <template #placeholder>
-                <div class="image-placeholder">
-                  <el-icon :size="32"><Loading /></el-icon>
-                </div>
-              </template>
-              <template #error>
-                <div class="image-error">
-                  <el-icon :size="32"><Picture /></el-icon>
-                </div>
-              </template>
-            </el-image>
-            
-            <div v-if="index < 3" :class="['rank-badge', `rank-${index}`]" />
-          </div>
-          
-          <div class="card-body">
-            <div class="rank-name" :title="rank.name">
-              <el-tag v-if="index < 3" :type="getTagType(index)" size="small" effect="plain">
-                TOP {{ index + 1 }}
-              </el-tag>
-              {{ rank.name }}
+      <!-- 榜单推荐区域 -->
+      <div v-if="recommendRanks.length" class="rank-section">
+        <div class="section-header">
+          <el-icon :size="20" color="#F56C6C"><Star /></el-icon>
+          <h3 class="section-title">榜单推荐</h3>
+        </div>
+        <el-divider class="section-divider" />
+        <div class="ranks-grid-full">
+          <el-card
+            v-for="rank in recommendRanks"
+            :key="rank.id"
+            class="rank-card"
+            :body-style="{ padding: '0' }"
+            shadow="hover"
+            @click="goToPlaylist(rank.id)"
+          >
+            <div class="card-cover">
+              <el-image
+                :src="rank.coverImgUrl"
+                :alt="rank.name"
+                fit="cover"
+                :lazy="true"
+                class="cover-image"
+              >
+                <template #placeholder>
+                  <div class="image-placeholder">
+                    <el-icon :size="32"><Loading /></el-icon>
+                  </div>
+                </template>
+                <template #error>
+                  <div class="image-error">
+                    <el-icon :size="32"><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
             </div>
-            <div class="rank-meta">
-              <span class="play-count">
-                <el-icon><Headset /></el-icon>
-                {{ formatPlayCount(rank.playCount) }}
-              </span>
-              <span class="song-count" v-if="rank.trackCount">
-                <el-icon><Folder /></el-icon>
-                {{ rank.trackCount }}首
-              </span>
+          </el-card>
+        </div>
+      </div>
+
+      <!-- 官方榜区域 -->
+      <div v-if="officialRanks.length" class="rank-section">
+        <div class="section-header">
+          <el-icon :size="20" color="#409EFF"><Trophy /></el-icon>
+          <h3 class="section-title">官方榜</h3>
+          <el-button
+            v-if="officialRanks.length > 5"
+            text
+            type="primary"
+            @click="showAllOfficialRanks = !showAllOfficialRanks"
+          >
+            {{ showAllOfficialRanks ? '收起' : '更多' }}
+            <el-icon>
+              <component :is="showAllOfficialRanks ? 'ArrowUp' : 'ArrowDown'" />
+            </el-icon>
+          </el-button>
+        </div>
+        <el-divider class="section-divider" />
+        <div class="ranks-grid-full">
+          <el-card
+            v-for="rank in displayedOfficialRanks"
+            :key="rank.id"
+            class="rank-card"
+            :body-style="{ padding: '0' }"
+            shadow="hover"
+            @click="goToPlaylist(rank.id)"
+          >
+            <div class="card-cover">
+              <el-image
+                :src="rank.coverImgUrl"
+                :alt="rank.name"
+                fit="cover"
+                :lazy="true"
+                class="cover-image"
+              >
+                <template #placeholder>
+                  <div class="image-placeholder">
+                    <el-icon :size="32"><Loading /></el-icon>
+                  </div>
+                </template>
+                <template #error>
+                  <div class="image-error">
+                    <el-icon :size="32"><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
             </div>
-            <div class="rank-time" v-if="rank.updateTime || rank.updateFrequency">
-              <el-icon><Clock /></el-icon>
-              {{ rank.updateFrequency || '每日更新' }}
+          </el-card>
+        </div>
+      </div>
+
+      <!-- 精选榜区域 -->
+      <div v-if="selectedRanks.length" class="rank-section">
+        <div class="section-header">
+          <el-icon :size="20" color="#E6A23C"><Medal /></el-icon>
+          <h3 class="section-title">精选榜</h3>
+        </div>
+        <el-divider class="section-divider" />
+        <div class="ranks-grid-full">
+          <el-card
+            v-for="rank in selectedRanks"
+            :key="rank.id"
+            class="rank-card"
+            :body-style="{ padding: '0' }"
+            shadow="hover"
+            @click="goToPlaylist(rank.id)"
+          >
+            <div class="card-cover">
+              <el-image
+                :src="rank.coverImgUrl"
+                :alt="rank.name"
+                fit="cover"
+                :lazy="true"
+                class="cover-image"
+              >
+                <template #placeholder>
+                  <div class="image-placeholder">
+                    <el-icon :size="32"><Loading /></el-icon>
+                  </div>
+                </template>
+                <template #error>
+                  <div class="image-error">
+                    <el-icon :size="32"><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
             </div>
-          </div>
-        </el-card>
+          </el-card>
+        </div>
+      </div>
+
+      <!-- 曲风榜区域 -->
+      <div v-if="genreRanks.length" class="rank-section">
+        <div class="section-header">
+          <el-icon :size="20" color="#909399"><Headset /></el-icon>
+          <h3 class="section-title">曲风榜</h3>
+        </div>
+        <el-divider class="section-divider" />
+        <div class="ranks-grid-full">
+          <el-card
+            v-for="rank in genreRanks"
+            :key="rank.id"
+            class="rank-card"
+            :body-style="{ padding: '0' }"
+            shadow="hover"
+            @click="goToPlaylist(rank.id)"
+          >
+            <div class="card-cover">
+              <el-image
+                :src="rank.coverImgUrl"
+                :alt="rank.name"
+                fit="cover"
+                :lazy="true"
+                class="cover-image"
+              >
+                <template #placeholder>
+                  <div class="image-placeholder">
+                    <el-icon :size="32"><Loading /></el-icon>
+                  </div>
+                </template>
+                <template #error>
+                  <div class="image-error">
+                    <el-icon :size="32"><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+            </div>
+          </el-card>
+        </div>
+      </div>
+
+      <!-- 全球榜区域 -->
+      <div v-if="globalRanks.length" class="rank-section">
+        <div class="section-header">
+          <el-icon :size="20" color="#67C23A"><Star /></el-icon>
+          <h3 class="section-title">全球榜</h3>
+        </div>
+        <el-divider class="section-divider" />
+        <div class="ranks-grid-full">
+          <el-card
+            v-for="rank in globalRanks"
+            :key="rank.id"
+            class="rank-card"
+            :body-style="{ padding: '0' }"
+            shadow="hover"
+            @click="goToPlaylist(rank.id)"
+          >
+            <div class="card-cover">
+              <el-image
+                :src="rank.coverImgUrl"
+                :alt="rank.name"
+                fit="cover"
+                :lazy="true"
+                class="cover-image"
+              >
+                <template #placeholder>
+                  <div class="image-placeholder">
+                    <el-icon :size="32"><Loading /></el-icon>
+                  </div>
+                </template>
+                <template #error>
+                  <div class="image-error">
+                    <el-icon :size="32"><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+            </div>
+          </el-card>
+        </div>
+      </div>
+
+      <!-- 语种榜区域 -->
+      <div v-if="languageRanks.length" class="rank-section">
+        <div class="section-header">
+          <el-icon :size="20" color="#F56C6C"><List /></el-icon>
+          <h3 class="section-title">语种榜</h3>
+        </div>
+        <el-divider class="section-divider" />
+        <div class="ranks-grid-full">
+          <el-card
+            v-for="rank in languageRanks"
+            :key="rank.id"
+            class="rank-card"
+            :body-style="{ padding: '0' }"
+            shadow="hover"
+            @click="goToPlaylist(rank.id)"
+          >
+            <div class="card-cover">
+              <el-image
+                :src="rank.coverImgUrl"
+                :alt="rank.name"
+                fit="cover"
+                :lazy="true"
+                class="cover-image"
+              >
+                <template #placeholder>
+                  <div class="image-placeholder">
+                    <el-icon :size="32"><Loading /></el-icon>
+                  </div>
+                </template>
+                <template #error>
+                  <div class="image-error">
+                    <el-icon :size="32"><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+            </div>
+          </el-card>
+        </div>
       </div>
     </div>
   </div>
@@ -101,16 +295,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { musicService, formatPlayCount } from '../api/music.js'
+import { musicService } from '../api/music.js'
 import { ElMessage } from 'element-plus'
-import { 
-  Trophy, 
-  Headset, 
-  Picture, 
-  Loading, 
-  Folder,
-  Clock,
-  DataLine
+import {
+  Trophy,
+  Headset,
+  Picture,
+  Loading,
+  DataLine,
+  Star,
+  Medal,
+  List,
+  ArrowUp,
+  ArrowDown
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -118,11 +315,117 @@ const router = useRouter()
 const loading = ref(true)
 const allRanks = ref([])
 
-// 获取标签类型
-const getTagType = (index) => {
-  const types = ['danger', 'warning', 'success']
-  return types[index] || 'info'
-}
+// 控制官方榜展开状态
+const showAllOfficialRanks = ref(false)
+
+// 榜单推荐（热度最高、播放量最大的榜单，取前5个）
+const recommendRanks = computed(() => {
+  if (!allRanks.value.length) return []
+  return allRanks.value
+    .filter(rank => rank.playCount)
+    .sort((a, b) => b.playCount - a.playCount)
+    .slice(0, 5)
+})
+
+// 官方榜（包含"官方"、"榜"字，且非全球、语种、曲风类）
+const officialRanks = computed(() => {
+  return allRanks.value.filter(rank => {
+    const name = rank.name || ''
+    return name &&
+      (name.includes('官方') || name.includes('榜')) &&
+      !name.includes('全球') &&
+      !name.includes('英国') &&
+      !name.includes('美国') &&
+      !name.includes('日本') &&
+      !name.includes('韩国') &&
+      !name.includes('法语') &&
+      !name.includes('英语') &&
+      !name.includes('日语') &&
+      !name.includes('韩语') &&
+      !name.includes('华语') &&
+      !name.includes('DJ') &&
+      !name.includes('摇滚') &&
+      !name.includes('民谣') &&
+      !name.includes('电音') &&
+      !name.includes('说唱') &&
+      !name.includes('轻音乐') &&
+      !name.includes('古典') &&
+      !name.includes('流行')
+  })
+})
+
+// 显示的官方榜（根据展开状态返回前5个或全部）
+const displayedOfficialRanks = computed(() => {
+  if (!showAllOfficialRanks.value && officialRanks.value.length > 5) {
+    return officialRanks.value.slice(0, 5)
+  }
+  return officialRanks.value
+})
+
+// 精选榜（各种特色榜单，如原创、新歌、上升、热歌、飙升等）
+const selectedRanks = computed(() => {
+  return allRanks.value.filter(rank => {
+    const name = rank.name || ''
+    return name && (
+      name.includes('原创') ||
+      name.includes('新歌') ||
+      name.includes('上升') ||
+      name.includes('热歌') ||
+      name.includes('飙升') ||
+      name.includes('达人') ||
+      name.includes('Mlog') ||
+      name.includes('云听')
+    )
+  })
+})
+
+// 曲风榜（DJ、摇滚、民谣、电音、说唱、轻音乐、古典、流行等）
+const genreRanks = computed(() => {
+  return allRanks.value.filter(rank => {
+    const name = rank.name || ''
+    return name && (
+      name.includes('DJ') ||
+      name.includes('电音') ||
+      name.includes('说唱') ||
+      name.includes('轻音乐') ||
+      name.includes('古典') ||
+      name.includes('摇滚') ||
+      name.includes('民谣') ||
+      name.includes('流行')
+    )
+  })
+})
+
+// 全球榜（包含全球、英国、美国、日本、韩国等）
+const globalRanks = computed(() => {
+  return allRanks.value.filter(rank => {
+    const name = rank.name || ''
+    return name && (
+      name.includes('全球') ||
+      name.includes('英国') ||
+      name.includes('美国') ||
+      name.includes('日本') ||
+      name.includes('韩国') ||
+      name.includes('UK') ||
+      name.includes('Billboard')
+    )
+  })
+})
+
+// 语种榜（华语、英语、日语、韩语、法语等）
+const languageRanks = computed(() => {
+  return allRanks.value.filter(rank => {
+    const name = rank.name || ''
+    return name && (
+      name.includes('华语') ||
+      name.includes('英语') ||
+      name.includes('日语') ||
+      name.includes('韩语') ||
+      name.includes('法语') ||
+      name.includes('粤语')
+    )
+  })
+})
 
 // 加载榜单数据
 const loadRankList = async () => {
@@ -324,90 +627,37 @@ onMounted(() => {
   }
 }
 
-/* 排行榜排名标识 */
-.rank-badge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+
+/* 排行榜分区 */
+.rank-section {
+  margin-bottom: var(--spacing-xxl);
+}
+
+.section-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-weight: var(--font-weight-bold);
-  color: white;
-  font-size: var(--font-size-sm);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.rank-0 {
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4a 100%);
-}
-
-.rank-1 {
-  background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
-}
-
-.rank-2 {
-  background: linear-gradient(135deg, #cd7f32 0%, #e8a862 100%);
-}
-
-/* 卡片主体 */
-.card-body {
-  padding: var(--spacing-md);
-  display: flex;
-  flex-direction: column;
   gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 
-.rank-name {
-  font-size: var(--font-size-base);
+.section-header .el-button {
+  margin-left: auto;
+}
+
+.section-title {
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0;
 }
 
-.rank-name .el-tag {
-  flex-shrink: 0;
+.section-divider {
+  margin-bottom: var(--spacing-lg);
 }
 
-.rank-meta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  margin-top: var(--spacing-xs);
-}
-
-.play-count,
-.song-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-}
-
-.play-count .el-icon,
-.song-count .el-icon {
-  font-size: 14px;
-}
-
-.rank-time {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-}
-
-.rank-time .el-icon {
-  font-size: 12px;
+/* 卡片主体（移除文字内容） */
+.card-body {
+  display: none;
 }
 
 /* 响应式调整 */
@@ -424,6 +674,10 @@ onMounted(() => {
   
   .rank-page {
     padding: var(--spacing-md);
+  }
+  
+  .section-header {
+    flex-direction: row;
   }
 }
 
@@ -443,29 +697,27 @@ onMounted(() => {
     font-size: var(--font-size-xl);
   }
   
-  .card-body {
-    padding: var(--spacing-sm);
-  }
-  
-  .rank-name {
-    font-size: var(--font-size-sm);
-  }
-  
-  .rank-badge {
-    width: 28px;
-    height: 28px;
-    font-size: 11px;
-  }
-  
   .ranks-grid-full {
     --column-count: 2;
     --gap-size: 16px;
+  }
+  
+  .rank-section {
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .section-header .el-icon {
+    width: 18px;
+  }
+  
+  .section-title {
+    font-size: var(--font-size-base);
   }
 }
 
 @media (max-width: 480px) {
   .ranks-grid-full {
-    --column-count: 1;
+    --column-count: 2;
   }
 }
 </style>

@@ -102,14 +102,13 @@ html, body {
 }
 
 .header-nav__link.active {
-  color: var(--color-text-inverse);
-  background-color: var(--color-primary);
+  color: var(--color-text-inverse) !important;
   background: var(--gradient-primary);
 }
 
 .header-nav__link.active .el-icon,
 .header-nav__link.active .nav-text {
-  color: var(--color-text-inverse);
+  color: var(--color-text-inverse) !important;
 }
 
 /* 搜索框区域 */
@@ -124,38 +123,6 @@ html, body {
   max-width: 300px;
 }
 
-.header-nav__link {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--radius-md);
-  text-decoration: none;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  transition: all var(--transition-fast) var(--ease-out);
-  position: relative;
-}
-
-.header-nav__link .nav-text {
-  white-space: nowrap;
-}
-
-.header-nav__link:hover {
-  color: var(--color-primary);
-  background-color: var(--color-bg-tertiary);
-}
-
-.header-nav__link.active {
-  color: var(--color-primary);
-  background-color: var(--color-primary);
-  background: var(--gradient-primary);
-}
-
-.header-nav__link.active .el-icon {
-  color: var(--color-text-inverse);
-}
 
 /* 搜索框区域 */
 .app-header__search {

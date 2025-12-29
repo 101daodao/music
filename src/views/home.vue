@@ -11,7 +11,7 @@
     <!-- 页面内容 -->
     <div class="page-content">
       <!-- 轮播图区域 -->
-      <section class="carousel-section">
+      <section class="page-section carousel-section">
         <Carousel
           v-if="carouselItems.length > 0"
           :items="carouselItems"
@@ -24,8 +24,11 @@
         </div>
       </section>
 
+      <!-- 分隔线 -->
+      <div class="page-divider"></div>
+
       <!-- 推荐音乐区域 -->
-      <section class="recommend-section">
+      <section class="page-section recommend-section">
         <div class="section-header">
           <h2 class="section-title">
             <el-icon :size="20"><TrendCharts /></el-icon> 热门推荐
@@ -59,49 +62,35 @@
         </div>
       </section>
       
+      <!-- 分隔线 -->
+      <div class="page-divider"></div>
+      
       <!-- 最新音乐区域 -->
-      <section class="latest-section">
-        <h2 class="section-title">
-          <el-icon :size="20"><Clock /></el-icon> 最新音乐
-        </h2>
-        <div class="music-list">
-          <div 
-            v-for="(item, index) in latestMusic" 
+      <section class="page-section latest-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <el-icon :size="20"><Clock /></el-icon> 最新音乐
+          </h2>
+        </div>
+        <div class="music-grid">
+          <div
+            v-for="(item, index) in latestMusic"
             :key="index"
-            class="music-item"
+            class="music-card"
             @click="playMusic(item)"
           >
-            <span class="music-index">{{ index + 1 }}</span>
-            <div class="music-details">
-              <h4 class="music-name">{{ item.title }}</h4>
-              <p class="music-singer">{{ item.artist }}</p>
+            <div class="music-cover">
+              <img
+                :src="item.cover"
+                :alt="item.title"
+                @error="handleImageError"
+              />
             </div>
-            <span class="music-duration">{{ item.duration }}</span>
-          </div>
-        </div>
-      </section>
-      
-      <!-- 统计数据区域 -->
-      <section class="stats-section">
-        <h2 class="section-title">
-          <el-icon :size="20"><DataAnalysis /></el-icon> 平台数据
-        </h2>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.totalSongs }}</div>
-            <div class="stat-label">歌曲总数</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.totalArtists }}</div>
-            <div class="stat-label">歌手数量</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.totalPlaylists }}</div>
-            <div class="stat-label">歌单数量</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-number">{{ stats.activeUsers }}</div>
-            <div class="stat-label">活跃用户</div>
+            <div class="music-info">
+              <h3 class="music-title">{{ item.title }}</h3>
+              <p class="music-artist">{{ item.artist }}</p>
+              <p class="music-duration-small">{{ item.duration }}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -111,7 +100,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Headset, TrendCharts, Clock, DataAnalysis } from '@element-plus/icons-vue'
+import { Headset, TrendCharts, Clock } from '@element-plus/icons-vue'
 import { usePlayerStore } from '../stores/player.js'
 import { musicService } from '../api/music.js'
 import Carousel from '../components/Carousel.vue'
@@ -124,23 +113,25 @@ const carouselItems = ref([])
 const recommendMusic = ref([])
 const showMore = ref(false)
 const latestMusic = ref([])
-const stats = ref({
-  totalSongs: 0,
-  totalArtists: 0,
-  totalPlaylists: 0,
-  activeUsers: '0'
-})
-
 // 计算属性：显示的热门歌曲
 const displayRecommendMusic = computed(() => {
   return showMore.value ? recommendMusic.value : recommendMusic.value.slice(0, 10)
 })
 
 // 方法
-const playMusic = (music) => {
+const playMusic = async (music) => {
   console.log('播放音乐:', music.title)
+  // 确保数据格式正确，包含所有必要字段
+  const formattedMusic = {
+    id: music.id,
+    title: music.title,
+    artist: music.artist,
+    album: music.album || '未知专辑',
+    cover: music.cover || 'https://picsum.photos/200/200?default=fallback',
+    duration: typeof music.duration === 'number' ? music.duration : 0
+  }
   // 将音乐添加到播放列表并播放
-  playerStore.playSong(music)
+  await playerStore.playSong(formattedMusic)
 }
 
 // 处理轮播图点击
@@ -166,7 +157,8 @@ const loadCarouselData = async () => {
         id: item.id,
         title: item.title,
         artist: item.artist,
-        cover: item.cover
+        cover: item.cover,
+        album: item.album || '未知专辑'
       }))
     }
   } catch (error) {
@@ -190,6 +182,7 @@ const loadRecommendMusic = async () => {
         title: item.title,
         artist: item.artist,
         cover: item.cover,
+        album: item.album || '未知专辑',
         duration: item.duration
       }))
       console.log('推荐音乐加载成功:', recommendMusic.value.length, '首歌曲')
@@ -212,29 +205,34 @@ const toggleShowMore = () => {
   console.log('切换显示状态:', showMore.value ? '展开' : '收起')
 }
 
-// 加载最新音乐
-const loadLatestMusic = async () => {
-  try {
-    const result = await musicService.getPersonalizedNewSongs(5)
-    if (result.success) {
-      latestMusic.value = result.data.map(item => ({
-        id: item.id,
-        title: item.name,
-        artist: item.artist,
-        duration: formatDuration(item.duration)
-      }))
-    }
-  } catch (error) {
-    console.error('加载最新音乐失败:', error)
-  }
-}
-
 // 格式化时长
 const formatDuration = (ms) => {
   if (!ms) return '0:00'
   const minutes = Math.floor(ms / 60000)
   const seconds = Math.floor((ms % 60000) / 1000)
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+// 加载最新音乐
+const loadLatestMusic = async () => {
+  try {
+    const result = await musicService.getPersonalizedNewSongs(10)
+    if (result.success) {
+      latestMusic.value = result.data.map(item => ({
+        id: item.id,
+        title: item.title || '未知歌曲',
+        artist: item.artist || '未知歌手',
+        cover: item.cover || 'https://picsum.photos/200/200',
+        album: item.album || '未知专辑',
+        duration: formatDuration(item.duration)
+      }))
+      console.log('最新音乐加载成功:', latestMusic.value.length, '首歌曲')
+    } else {
+      console.error('最新音乐加载失败:', result.error)
+    }
+  } catch (error) {
+    console.error('加载最新音乐失败:', error)
+  }
 }
 
 // 生命周期
@@ -253,21 +251,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 轮播图区域 */
-.carousel-section {
-  margin-bottom: var(--spacing-xxl);
-}
-
-.loading-placeholder {
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-  color: var(--color-text-secondary);
-}
-
 /* 页面整体样式 */
 .home-page {
   animation: pageFadeIn 0.6s ease-out;
@@ -284,6 +267,60 @@ onMounted(async () => {
   }
 }
 
+/* 页面内容区域 */
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 页面区块 */
+.page-section {
+  padding: var(--spacing-xl) 0;
+}
+
+/* 分隔线 */
+.page-divider {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-primary) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: gradientMove 3s ease-in-out infinite;
+  margin: var(--spacing-xxl) 0;
+  border-radius: var(--radius-round);
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 轮播图区域 */
+.carousel-section {
+  min-height: 300px;
+}
+
+.loading-placeholder {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+}
+
 /* 区块标题样式 */
 .section-header {
   display: flex;
@@ -296,10 +333,9 @@ onMounted(async () => {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  padding-bottom: var(--spacing-sm);
-  border-bottom: 2px solid var(--color-primary);
-  display: inline-block;
-  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .more-button {
@@ -325,19 +361,16 @@ onMounted(async () => {
   transform: scale(0.98);
 }
 
-/* 推荐音乐网格 */
+/* 推荐音乐和最新音乐网格 */
 .music-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--spacing-lg);
-  max-height: 600px;
-  overflow: hidden;
-  transition: max-height var(--transition-normal) var(--ease-out);
-  margin-bottom: var(--spacing-xxl);
+  transition: all var(--transition-normal) var(--ease-out);
 }
 
 .music-grid.expanded {
-  max-height: none;
+  /* 展开时显示所有内容 */
 }
 
 .music-card {
@@ -347,6 +380,8 @@ onMounted(async () => {
   cursor: pointer;
   transition: all var(--transition-normal) var(--ease-out);
   box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
 }
 
 .music-card:hover {
@@ -375,9 +410,11 @@ onMounted(async () => {
   transform: scale(1.05);
 }
 
-
 .music-info {
   padding: var(--spacing-md);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .music-title {
@@ -393,95 +430,16 @@ onMounted(async () => {
 .music-artist {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* 最新音乐列表 */
-.music-list {
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  margin-bottom: var(--spacing-xxl);
-}
-
-.music-item {
-  display: flex;
-  align-items: center;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-bottom: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: background-color var(--transition-fast) var(--ease-out);
-}
-
-.music-item:last-child {
-  border-bottom: none;
-}
-
-.music-item:hover {
-  background-color: var(--color-bg-tertiary);
-}
-
-.music-index {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
+.music-duration-small {
+  font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
-  width: 30px;
-  text-align: center;
-}
-
-.music-details {
-  flex: 1;
-  margin-left: var(--spacing-md);
-}
-
-.music-name {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-  margin-bottom: var(--spacing-xs);
-}
-
-.music-singer {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.music-duration {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-tertiary);
-}
-
-/* 统计数据网格 */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--spacing-lg);
-}
-
-.stat-card {
-  background: var(--gradient-primary);
-  color: var(--color-text-inverse);
-  padding: var(--spacing-xl) var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  transition: transform var(--transition-normal) var(--ease-out);
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-}
-
-.stat-number {
-  font-size: var(--font-size-xxxl);
-  font-weight: var(--font-weight-bold);
-  margin-bottom: var(--spacing-sm);
-}
-
-.stat-label {
-  font-size: var(--font-size-base);
-  opacity: 0.9;
+  margin-top: auto;
 }
 
 /* 响应式设计 */
@@ -491,32 +449,23 @@ onMounted(async () => {
     gap: var(--spacing-md);
   }
   
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-md);
-  }
-  
   .section-title {
     font-size: var(--font-size-lg);
   }
+  
+  .page-section {
+    padding: var(--spacing-lg) 0;
+  }
+  
+  .page-divider {
+    margin: var(--spacing-lg) 0;
+  }
 }
 
-@media (max-width: 576px) {
+@media (max-width: 480px) {
   .music-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .music-item {
-    padding: var(--spacing-sm) var(--spacing-md);
-  }
-  
-  .music-index {
-    width: 25px;
-    font-size: var(--font-size-base);
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: var(--spacing-sm);
   }
 }
 </style>
