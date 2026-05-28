@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: 'http://iwenwiki.com:3000',
+  baseURL: '/api',
   timeout: 10000,
   withCredentials: true, // 支持跨域携带cookie
   headers: {

@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "target": "http://iwenwiki.com:3000/"
+    }
+  ]
+}
