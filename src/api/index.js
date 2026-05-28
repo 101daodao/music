@@ -7,39 +7,20 @@ const api = axios.create({
   withCredentials: true, // 支持跨域携带cookie
   headers: {
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    // 添加Accept
     'Accept': '*/*',
-    // 添加Accept-Language
     'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8'
   }
 })
 
 // 请求拦截器
 api.interceptors.request.use(
-  config => {
-    // 添加时间戳参数避免缓存（特别是POST请求）
+  async config => {
+    // 添加时间戳参数避免缓存
     if (!config.params) {
       config.params = {}
     }
     
-    // 使用不同的随机IP避免风控
-    const domesticIPs = [
-      '116.25.146.177',
-      '121.29.38.126',
-      '113.87.22.191',
-      '113.88.236.242',
-      '120.79.147.208',
-      '119.29.242.86'
-    ]
-    const randomIP = domesticIPs[Math.floor(Math.random() * domesticIPs.length)]
-    
     config.params.timestamp = Date.now()
-    config.params.realIP = randomIP
-    
-    // 添加设备ID模拟真实设备
-    if (!config.params.e_r) {
-      config.params.e_r = true
-    }
     
     // 从本地存储获取cookie
     const cookie = localStorage.getItem('netease-cookie')
@@ -100,6 +81,7 @@ api.interceptors.response.use(
     
     // 检查响应数据
     const errorData = error.response?.data
+    const status = error.response?.status
     let errorMessage = error.message || '请求失败'
     
     if (errorData) {
@@ -109,9 +91,25 @@ api.interceptors.response.use(
         console.error('460错误:', errorData)
       } else if (errorData.code === 503) {
         errorMessage = '请求频率过高，请稍后再试'
+        // 建议用户等待片刻再试
+        await new Promise(resolve => setTimeout(resolve, 3000))
+      } else if (errorData.code === 403 || errorData.code === 401) {
+        errorMessage = '请求被拒绝，可能是触发风控，请稍后再试'
+        console.error('风控拦截:', errorData)
       } else if (errorData.message) {
         errorMessage = errorData.message
       }
+    }
+    
+    // 处理HTTP状态码
+    if (status === 403) {
+      errorMessage = '请求频率过高，已被限流，请稍后再试'
+      // 强制等待时间
+      await new Promise(resolve => setTimeout(resolve, 5000))
+    } else if (status === 429) {
+      errorMessage = '请求过于频繁，请稍后再试'
+    } else if (status >= 500) {
+      errorMessage = '服务暂时不可用，请稍后再试'
     }
     
     return Promise.reject(new Error(errorMessage))
@@ -221,26 +219,18 @@ export const musicApi = {
 
   // 登录相关接口
   
-  // 13. 发送验证码 - 添加随机延迟规避风控
+  // 13. 发送验证码
   async sendCaptcha(phone, ctcode = '86') {
-    // 添加随机延迟（1-2秒）避免频繁调用
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
-    
-    // 发送验证码不使用重试机制
     return api.get(`/captcha/sent?phone=${phone}&ctcode=${ctcode}`)
   },
 
-  // 14. 手机号验证码登录 - 使用POST请求，添加随机延迟规避风控
+  // 14. 手机号验证码登录
   async loginWithCaptcha(phone, captcha, ctcode = '86') {
-    // 添加随机延迟（1-3秒）避免频繁调用
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000))
-    
     const formData = new URLSearchParams()
     formData.append('phone', phone)
     formData.append('captcha', captcha)
     formData.append('ctcode', ctcode)
     
-    // 登录接口不使用重试机制，避免多次尝试触发风控
     return api.post('/login/cellphone', formData, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -258,10 +248,9 @@ export const musicApi = {
     return retryRequest(() => api.get(`/login/qr/create?key=${key}&qrimg=${qrimg}`))
   },
 
-  // 17. 检查二维码扫码状态 - 添加参数避免风控，不使用重试
+  // 17. 检查二维码扫码状态
   checkQrStatus(key) {
     return api.get(`/login/qr/check?key=${key}`, {
-      // 检查扫码状态不携带cookie，避免触发风控
       params: {
         noCookie: true
       }
@@ -278,12 +267,12 @@ export const musicApi = {
     return retryRequest(() => api.get(`/user/detail?uid=${uid}`))
   },
 
-  // 20. 退出登录 - 使用POST请求
+  // 20. 退出登录
   logout() {
     return retryRequest(() => api.post('/logout', new URLSearchParams()))
   },
 
-  // 21. 游客登录 - 获取匿名cookie
+  // 21. 游客登录
   getAnonimousUser() {
     return api.post('/register/anonimous', new URLSearchParams())
   },
@@ -300,6 +289,37 @@ export const musicApi = {
   getSongDetail(ids) {
     const songIds = Array.isArray(ids) ? ids.join(',') : ids
     return retryRequest(() => api.get(`/song/detail?ids=${songIds}`))
+  },
+
+  // 24. 获取用户歌单
+  getUserPlaylists(uid, limit = 30, offset = 0) {
+    return retryRequest(() => api.get(`/user/playlist?uid=${uid}&limit=${limit}&offset=${offset}`))
+  },
+
+  // 25. 获取用户喜欢的歌曲ID列表
+  getLikedSongs(uid) {
+    return retryRequest(() => api.get(`/likelist?uid=${uid}`))
+  },
+
+  // 26. 获取推荐MV
+  getPersonalizedMV(limit = 10) {
+    return retryRequest(() => api.get(`/personalized/mv`, { params: { limit } }))
+  },
+
+  // 27. 获取MV详情
+  getMVDetail(mvid) {
+    return retryRequest(() => api.get(`/mv/detail?mvid=${mvid}`))
+  },
+
+  // 28. 获取MV播放地址
+  getMVUrl(id, r = 1080) {
+    return retryRequest(() => api.get(`/mv/url?id=${id}&r=${r}`))
+  },
+
+  // 29. 获取网易出品MV
+  getExclusiveMV(options = {}) {
+    const { limit = 30, offset = 0 } = options
+    return retryRequest(() => api.get(`/mv/exclusive/rcmd?limit=${limit}&offset=${offset}`))
   }
 }
 

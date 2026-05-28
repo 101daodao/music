@@ -49,7 +49,8 @@
         <!-- 歌曲结果 -->
         <div v-if="searchResults.songs.length > 0" class="result-section">
           <div class="result-section-title">
-            <span>🎵 歌曲</span>
+            <span class="result-section-title-icon"><el-icon :size="14"><Headset /></el-icon></span>
+            <span class="result-section-title-text">歌曲</span>
             <span class="result-count">{{ searchResults.songs.length }}</span>
           </div>
           <div 
@@ -63,7 +64,7 @@
             <div class="result-cover">
               <img :src="song.cover || defaultCover" :alt="song.name" />
               <div class="play-overlay">
-                <span class="play-icon">▶</span>
+                <el-icon :size="20" class="play-icon"><VideoPlay /></el-icon>
               </div>
             </div>
             <div class="result-info">
@@ -80,7 +81,8 @@
         <!-- 歌单结果 -->
         <div v-if="searchResults.playlists.length > 0" class="result-section">
           <div class="result-section-title">
-            <span>📋 歌单</span>
+            <span class="result-section-title-icon"><el-icon :size="14"><Document /></el-icon></span>
+            <span class="result-section-title-text">歌单</span>
             <span class="result-count">{{ searchResults.playlists.length }}</span>
           </div>
           <div 
@@ -100,7 +102,7 @@
               <p class="result-album">{{ playlist.trackCount }}首 • {{ formatPlayCount(playlist.playCount) }}</p>
             </div>
             <div class="result-arrow">
-              <span>→</span>
+              <el-icon :size="18"><ArrowRight /></el-icon>
             </div>
           </div>
         </div>
@@ -108,7 +110,7 @@
       
       <!-- 无结果 -->
       <div v-else-if="!isSearching && searchQuery.trim() && !hasResults" class="no-results">
-        <span>🔍</span>
+        <el-icon :size="48"><Search /></el-icon>
         <p>未找到相关结果</p>
         <small>尝试使用其他关键词</small>
       </div>
@@ -121,7 +123,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../stores/player.js'
 import { musicService } from '../api/music.js'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Headset, Document, VideoPlay, ArrowRight } from '@element-plus/icons-vue'
 
 const props = defineProps({
   placeholder: {
@@ -546,6 +548,17 @@ defineExpose({
   z-index: 1;
 }
 
+.result-section-title-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: var(--spacing-xs);
+  color: var(--color-primary);
+}
+
+.result-section-title-text {
+  flex: 1;
+}
+
 .result-count {
   color: var(--color-text-tertiary);
 }
@@ -604,7 +617,6 @@ defineExpose({
 
 .play-icon {
   color: white;
-  font-size: 18px;
 }
 
 .result-info {

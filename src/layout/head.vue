@@ -8,7 +8,7 @@
           <div class="app-logo__icon">
             <el-icon :size="20"><Headset /></el-icon>
           </div>
-          <span class="app-logo__text">网易云音乐</span>
+          <span class="app-logo__text">101云音乐</span>
         </router-link>
       </div>
       
@@ -141,7 +141,7 @@
               <img :src="authStore.avatar" alt="用户头像" class="user-dropdown__avatar">
               <div class="user-dropdown__text">
                 <div class="user-dropdown__name">{{ authStore.nickname }}</div>
-                <div class="user-dropdown__email">网易云音乐用户</div>
+                <div class="user-dropdown__email">101云音乐用户</div>
               </div>
             </div>
             <div class="user-dropdown__divider"></div>
@@ -320,7 +320,9 @@ onUnmounted(() => {
   background-color: var(--color-bg-tertiary);
 }
 
-.menu-icon {
+.menu-icon,
+.sidebar-toggle .el-icon,
+.menu-toggle .el-icon {
   font-size: 18px;
   color: var(--color-text-primary);
   transition: transform var(--transition-normal) var(--ease-out);

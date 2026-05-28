@@ -692,5 +692,189 @@ export const musicService = {
         data: null
       }
     }
+  },
+
+  // 获取用户歌单
+  async getUserPlaylists(uid) {
+    try {
+      const response = await musicApi.getUserPlaylists(uid)
+      const playlists = response.playlist || []
+      
+      return {
+        success: true,
+        data: playlists.map(playlist => ({
+          id: playlist.id,
+          name: playlist.name,
+          coverImgUrl: playlist.coverImgUrl || '',
+          playCount: playlist.playCount || 0,
+          trackCount: playlist.trackCount || 0,
+          description: playlist.description || '',
+          creator: playlist.creator?.nickname || '未知用户',
+          subscribedCount: playlist.subscribedCount || 0
+        })),
+        total: playlists.length
+      }
+    } catch (error) {
+      console.error('获取用户歌单失败:', error)
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      }
+    }
+  },
+
+  // 获取用户喜欢的歌曲
+  async getLikedSongs(uid) {
+    try {
+      const response = await musicApi.getLikedSongs(uid)
+      if (!response.ids || response.ids.length === 0) {
+        return {
+          success: true,
+          data: []
+        }
+      }
+      
+      // 获取歌曲ID列表
+      const songIds = response.ids.join(',')
+      const detailResponse = await musicApi.getSongDetail(songIds)
+      
+      if (!detailResponse.songs) {
+        return {
+          success: true,
+          data: []
+        }
+      }
+      
+      // 格式化歌曲数据
+      const songs = detailResponse.songs.map(song => ({
+        id: song.id,
+        title: song.name,
+        artist: song.ar?.map(a => a.name).join(' / ') || '未知歌手',
+        album: song.al?.name || '未知专辑',
+        duration: song.duration || 0,
+        cover: song.al?.picUrl || '',
+        url: ''
+      }))
+      
+      return {
+        success: true,
+        data: songs,
+        total: songs.length
+      }
+    } catch (error) {
+      console.error('获取喜欢的歌曲失败:', error)
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      }
+    }
+  },
+
+  // 获取推荐MV
+  async getPersonalizedMV(limit = 15) {
+    try {
+      const response = await musicApi.getPersonalizedMV(limit)
+      const mvList = (response.result || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        artistName: item.artistName || item.artist?.name || '未知歌手',
+        coverUrl: item.cover || item.picUrl || '',
+        playCount: item.playCount || 0,
+        duration: item.duration || 0
+      }))
+      
+      return {
+        success: true,
+        data: mvList,
+        total: mvList.length
+      }
+    } catch (error) {
+      console.error('获取推荐MV失败:', error)
+      return {
+        success: false,
+        error: error.message,
+        data: []
+      }
+    }
+  },
+
+  // 获取MV详情
+  async getMVDetail(mvid) {
+    try {
+      const response = await musicApi.getMVDetail(mvid)
+      const data = response.data
+      
+      return {
+        success: true,
+        data: {
+          id: data.id,
+          name: data.name,
+          artistName: data.artistName || data.artist?.name || '未知歌手',
+          coverUrl: data.cover || '',
+          playCount: data.playCount || 0,
+          duration: data.duration || 0,
+          desc: data.desc || '',
+          artists: data.artists || []
+        }
+      }
+    } catch (error) {
+      console.error('获取MV详情失败:', error)
+      return {
+        success: false,
+        error: error.message,
+        data: null
+      }
+    }
+  },
+
+  // 获取MV播放地址
+  async getMVUrl(id, resolution = 1080) {
+    try {
+      const response = await musicApi.getMVUrl(id, resolution)
+      return {
+        success: true,
+        data: response.data?.url || ''
+      }
+    } catch (error) {
+      console.error('获取MV播放地址失败:', error)
+      return {
+        success: false,
+        error: error.message,
+        data: ''
+      }
+    }
+  },
+
+  // 获取网易出品MV
+  async getExclusiveMV(options = {}) {
+    try {
+      const { limit = 30, offset = 0 } = options
+      const response = await musicApi.getExclusiveMV({ limit, offset })
+      const mvList = (response.data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        artistName: item.artistName || item.artist?.name || '未知歌手',
+        coverUrl: item.cover || item.picUrl || '',
+        playCount: item.playCount || 0,
+        duration: item.duration || 0
+      }))
+      
+      return {
+        success: true,
+        data: mvList,
+        total: mvList.length,
+        hasMore: response.hasMore || false
+      }
+    } catch (error) {
+      console.error('获取网易出品MV失败:', error)
+      return {
+        success: false,
+        error: error.message,
+        data: [],
+        hasMore: false
+      }
+    }
   }
 }

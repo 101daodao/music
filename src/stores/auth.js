@@ -22,7 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (userDetail.value?.profile?.nickname) {
       return userDetail.value.profile.nickname
     }
-    return '未登录'
+    return '游客'
   })
 
   const userId = computed(() => {

@@ -3,7 +3,7 @@
     <!-- 页面头部 -->
     <div class="page-header">
       <h1 class="page-title">
-        <el-icon :size="28"><Headset /></el-icon> 欢迎来到网易云音乐
+        <el-icon :size="28"><Headset /></el-icon> 欢迎来到101云音乐
       </h1>
       <p class="page-subtitle">发现好音乐，享受精彩生活</p>
     </div>

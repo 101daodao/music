@@ -5,6 +5,8 @@ const Home = () => import('../views/home.vue')
 const Rank = () => import('../views/rank.vue')
 const Playlist = () => import('../views/playlist.vue')
 const MyPlaylists = () => import('../views/my-playlists.vue')
+const Mine = () => import('../views/mine.vue')
+const MV = () => import('../views/mv.vue')
 
 // 路由配置
 const routes = [
@@ -44,6 +46,26 @@ const routes = [
     component: MyPlaylists,
     meta: {
       title: '我的歌单',
+      keepAlive: true,
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/mine',
+    name: 'Mine',
+    component: Mine,
+    meta: {
+      title: '个人中心',
+      keepAlive: true,
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/mv',
+    name: 'MV',
+    component: MV,
+    meta: {
+      title: 'MV播放',
       keepAlive: true,
       requiresAuth: false
     }

@@ -62,6 +62,17 @@
                 <span class="sidebar-menu__text">个人中心</span>
               </router-link>
             </li>
+            <li class="sidebar-menu__item">
+              <router-link
+                to="/mv"
+                class="sidebar-menu__link"
+                :class="{ active: $route.path === '/mv' }"
+                @click="closeMobileSidebar"
+              >
+                <el-icon class="sidebar-menu__icon" :size="18"><VideoPlay /></el-icon>
+                <span class="sidebar-menu__text">MV播放</span>
+              </router-link>
+            </li>
           </ul>
         </nav>
       </aside>
@@ -85,7 +96,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute } from 'vue-router'
-import { HomeFilled, Trophy, User, Folder } from '@element-plus/icons-vue'
+import { HomeFilled, Trophy, User, Folder, VideoPlay } from '@element-plus/icons-vue'
 import AppHeader from './head.vue'
 import AppMain from './main.vue'
 import { useThemeStore } from '../stores/theme.js'

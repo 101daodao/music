@@ -398,7 +398,7 @@ watch(currentLyricIndex, (newIndex) => {
 /* 唱片区 */
 .vinyl-section {
   flex: 0 0 450px;
-  background: #ffffff;
+  background: var(--color-bg-primary);
   display: flex;
   flex-direction: column;
   align-items: center;
