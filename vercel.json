@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "target": "http://iwenwiki.com:3000/"
+      "target": "http://iwenwiki.com:3000/:path*"
     }
   ]
 }
